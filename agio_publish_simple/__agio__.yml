@@ -1,0 +1,26 @@
+name: agio_publish_simple
+label: agio Publish Simple
+version: 0.0.1
+description: Simple publish engine
+tags:
+  - publish
+
+urls:
+  source_url: "https://github.com/agio-band/agio-pipe.git"
+  home_page: ""
+  documentation: ""
+  bug_tracker: "https://github.com/agio-band/agio-pipe/issues"
+
+required_packages: [
+  'agio_pipe>=0.0.1'
+]
+
+plugins:
+  # publish engine
+  - label: Simple Publish Engine
+    implementations:
+      - module: plugins/publish/simple_publish_engine.py
+
+  - label: Simple Launcher Service
+    implementations:
+        - module: plugins/services/launcher_service.py
