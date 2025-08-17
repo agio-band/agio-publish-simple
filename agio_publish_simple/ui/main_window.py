@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import tempfile
+import traceback
 from pathlib import Path
 
 from PySide6.QtGui import *
@@ -13,20 +14,21 @@ from agio.core import env_names
 from agio_publish_simple.ui import drop_widget
 from agio_pipe.entities.task import ATask
 
+# 🗂️ 📦 📌
 title1 = '''
-<html><head/><body><p><span style=\" font-size:12pt;\">
-🗂️ <span style="color: #999">Project:</span> {} / 
-📦 <span style="color: #999">Entity:</span> {} / 
-📌 <span style="color: #999">Task:</span> {}
+<html><head/><body><p><span style=" font-size:12pt;">
+ <span style="color: #999">Project:</span> {} / 
+ <span style="color: #999">Entity:</span> {} / 
+ <span style="color: #999">Task:</span> {}
 </span></p></body></html>
 '''
 title2 = '''
-<html><head/><body><p align=\"center\"><span style=\" font-size:12pt;\">
-Publishing logs...
+<html><head/><body><p align="center"><span style=" font-size:12pt;">
+Process logs
 </span></p></body></html>
 '''
 title3 = '''
-<html><head/><body><p align=\"center\"><span style=\" font-size:12pt;\">
+<html><head/><body><p align="center"><span style=" font-size:12pt;">
 Publishing Done!
 </span></p></body></html>
 '''
@@ -36,6 +38,7 @@ css_file = Path(__file__).parent/'style.css'
 
 
 class PublishDialog(QWidget):
+    output_encoding = 'cp1251' if os.name == 'nt' else 'utf-8'
     def __init__(
             self,
             task,
@@ -182,6 +185,10 @@ class PublishDialog(QWidget):
             self.on_error(e)
 
     def on_cancel_publish(self):
+        self.process: QProcess
+        if self.process:
+            self.process.kill()
+            self.process.waitForFinished()
         self.output_tb.clear()
         self.stackedWidget.setCurrentIndex(0)
 
@@ -241,13 +248,13 @@ class PublishDialog(QWidget):
 
     def handle_stdout(self):
         data = self.process.readAllStandardOutput()
-        text = bytes(data).decode('utf-8')
+        text = bytes(data).decode(self.output_encoding, errors="replace")
         print(text.strip())
         self.output_tb.append(text)
 
     def handle_stderr(self):
         data = self.process.readAllStandardError()
-        text = bytes(data).decode('utf-8')
+        text = bytes(data).decode(self.output_encoding, errors="replace")
         print(text.strip())
         self.output_tb.append_error(text.strip().replace('\n', '<br>').replace(' ', '&nbsp;'))
 
@@ -255,7 +262,7 @@ class PublishDialog(QWidget):
         if exit_code == 0:
             self.on_complete()
         else:
-            self.output_tb.append_error(f'Exit Status: {exit_status}')
+            self.output_tb.append_error(f'Exit code: {exit_code}')
 
     def on_error(self, message):
         self.output_tb.append_error(message)
@@ -316,6 +323,7 @@ class PublishDialog(QWidget):
                 scene_file = self.build_scene(workfile, review_file, save_file)
                 QMessageBox.information(self, 'Success', f'Saved to {scene_file}')
             except Exception as e:
+                traceback.print_exc()
                 QMessageBox.critical(self, ' Error', str(e))
 
     def open_scene(self):
@@ -338,7 +346,9 @@ class PublishDialog(QWidget):
                     elif cont.get_product().type == 'review':
                         self.set_review(cont.get_sources())
             except Exception as e:
+                traceback.print_exc()
                 QMessageBox.critical(self, ' Error', str(e))
+
 
 class Output(QTextBrowser):
 

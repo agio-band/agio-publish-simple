@@ -132,6 +132,63 @@ QCheckBox::indicator:checked {
     background-color: #87cefa;
 }
 
+/* === QScrollBar === */
+QScrollBar:vertical {
+    background: #2b2b2b;
+    width: 12px;
+    margin: 0;
+    border-radius: 6px;
+}
+QScrollBar::handle:vertical {
+    background: #5a5a5a;
+    border-radius: 6px;
+    min-height: 20px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #6c6c6c;
+}
+QScrollBar::handle:vertical:pressed {
+    background: #7c7c7c;
+}
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0; /* убираем стрелки */
+}
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QScrollBar:horizontal {
+    background: #2b2b2b;
+    height: 12px;
+    margin: 0;
+    border-radius: 6px;
+}
+QScrollBar::handle:horizontal {
+    background: #5a5a5a;
+    border-radius: 6px;
+    min-width: 20px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #6c6c6c;
+}
+QScrollBar::handle:horizontal:pressed {
+    background: #7c7c7c;
+}
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0; /* убираем стрелки */
+}
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+/* угол между скроллбарами */
+QScrollBar::corner {
+    background: #2b2b2b;
+}
 
 FileDropWidget[state="default"] {
     background-color: #333333;
