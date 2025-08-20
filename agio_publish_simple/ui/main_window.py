@@ -216,8 +216,8 @@ class PublishDialog(QWidget):
             text.append(f'<b>{version['new_version']['product']['name']}</b>: v{int(version['new_version']["version"])}')
             for file in version['published_files']:
                 text.append(f'<br> {root}/{file["path"]}')
-            text.append('<br>')
-        self.report_lb.setText('<br>'.join(text))
+            text.append('<br><br>')
+        self.report_lb.setText(''.join(text))
 
     def start_process(self, workfile, review_file):
         scene_file = self.build_scene(workfile, review_file)
@@ -296,11 +296,19 @@ class PublishDialog(QWidget):
             logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
             scene.create_container('Workfile', self.task, workfile_product, workfile)
         if review_file:
+            # review
             review_product = AProduct.find(self.task.entity.id, 'review', 'main')
             if not review_product:
-                raise RuntimeError('Workfile product not found')
+                raise RuntimeError('Review product not found')
             logger.debug('ADD Review %s %s %s', self.task, repr(review_product), review_file[0])
             scene.create_container('Review', self.task, review_product, review_file)
+            # thumbnail
+            thumbnail_product = AProduct.find(self.task.entity.id, 'thumbnail', 'main')
+            if not thumbnail_product:
+                raise RuntimeError('Thumbnail product not found')
+            logger.debug('ADD Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])
+            scene.create_container('Thumbnail', self.task, thumbnail_product, review_file)
+
         save_path = save_path or tempfile.mktemp(suffix='.json')
         scene.save(save_path)
         return save_path
@@ -355,6 +363,8 @@ class Output(QTextBrowser):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
+        self.setOpenLinks(False)
+        self.anchorClicked.connect(self.on_link_clicked)
 
     def _format_html(self, text):
         return str(text)
@@ -366,11 +376,14 @@ class Output(QTextBrowser):
 
     def append_success(self, text):
         self.append(
-            f"<span style='color:green'>{self._format_html(text)}</span>"
+            f"<span style='color:green'>{self._format_html(text.strip())}</span>"
         )
 
     def append(self, text):
-        super().append(self._format_html(text))
+        super().append(self._format_html(text.strip()))
+
+    def on_link_clicked(self, link):
+        print(link)
 
 
 class Line(QFrame):
@@ -378,3 +391,4 @@ class Line(QFrame):
         super().__init__(parent)
         self.setFrameShape(QFrame.Shape.HLine)
         self.setFrameShadow(QFrame.Shadow.Sunken)
+# start_file

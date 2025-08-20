@@ -32,7 +32,7 @@ def sequence_to_video(sequence: list[str], output_dir: Path, fps: int):
     return output_file
 
 
-def video_to_sequence(video_input: str|Path, output_dir: Path) -> list[str]:
+def video_to_sequence(video_input: str|Path, output_dir: Path, max_files: int = None) -> list[str]:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     cmd = [

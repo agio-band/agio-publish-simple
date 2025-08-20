@@ -66,14 +66,14 @@ class PublishProcessingReview(PublishProcessingBase):
         fps = self.instance.project.fields.get('fps')
         return ffmpeg_tools.sequence_to_video(sequence, self.tempdir/'render-review', fps)
 
-    def extract_sequence(self, source_files: list[str]) -> list[str]:
+    def extract_sequence(self, source_files: list[str], max_files: int = None) -> list[str]:
         if len(source_files) == 1 and Path(source_files[0]).is_dir():
-            source_files = [x.as_posix() for x in Path(source_files[0]).iterdir()]
+            source_files = self.extract_sequence_from_dir(Path(source_files[0]))
         # from video
         if len(source_files) == 1:
             if self.is_video_file(source_files[0]):
-                return ffmpeg_tools.video_to_sequence(source_files[0], self.tempdir/'from-video')
-            # from simple image
+                return ffmpeg_tools.video_to_sequence(source_files[0], self.tempdir/'from-video', max_files)
+            # from single image
             else:
                 self.check_valid_image_format(source_files[0])
                 orig_file = Path(source_files[0])
@@ -81,13 +81,19 @@ class PublishProcessingReview(PublishProcessingBase):
                 sequence = []
                 output_dir = self.tempdir / 'extracted_sequence'
                 output_dir.mkdir(parents=True, exist_ok=True)
-                for i in range(fps):
+                if max_files:
+                    rng = range(min(fps, max_files))
+                else:
+                    rng = range(fps)
+                for i in rng:
                     save_path = output_dir / f'{orig_file.stem}{i:05d}{orig_file.suffix}'
                     sequence.append(shutil.copy(orig_file, save_path))
                 return sequence
         else:
             # from sequence
             self.check_valid_image_format(source_files[0])
+            if max_files:
+                return source_files[:max_files]
             return source_files
 
     def check_valid_image_format(self, file_name: str):
@@ -101,3 +107,6 @@ class PublishProcessingReview(PublishProcessingBase):
     def is_video_file(self, file_name: str) -> bool:
         mtp = mimetypes.guess_type(str(file_name))[0]
         return mtp.startswith('video')
+
+    def extract_sequence_from_dir(self, path: Path|str) -> list[str]:
+        return [x.as_posix() for x in Path(path).iterdir()]

@@ -1,14 +1,11 @@
 from pathlib import Path
 from ._base import PublishProcessingBase
-from agio.core.utils.modules_utils import import_modules_from_dir
+from agio.core.utils.modules_utils import import_modules_from_dir, iter_subclasses
 
 
 def iter_publishers():
-    root = Path(__file__).parent
-    name = __name__.rsplit('.', 1)[0]
-    import_modules_from_dir(root, name)
-    for cls in PublishProcessingBase.__subclasses__():
-        yield cls
+    import_modules_from_dir(Path(__file__).parent, __name__)
+    yield from iter_subclasses(PublishProcessingBase)
 
 
 def get_publisher(product_type: str):
