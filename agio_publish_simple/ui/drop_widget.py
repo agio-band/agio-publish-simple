@@ -79,7 +79,6 @@ class FileDropWidget(QFrame):
                 self.set_state("valid")
                 event.acceptProposedAction()
             except Exception as e:
-                # показываем ошибку
                 self.set_state("error")
                 self.label.setText(str(e))
                 event.ignore()
