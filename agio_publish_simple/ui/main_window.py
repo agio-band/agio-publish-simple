@@ -74,6 +74,7 @@ class PublishDialog(QWidget):
             accepted_extensions=review_extensions,
             allow_sequence=True,
             allow_multiple=True,
+            allow_directory=True,
         )
         self.drop_wd_2.sourceChangedSignal.connect(self.on_source_changed)
         self.drop_wd_2_ly.addWidget(self.drop_wd_2)
