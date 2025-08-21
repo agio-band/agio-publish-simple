@@ -9,6 +9,7 @@ from agio_pipe.exceptions import PublishError
 from agio_pipe.publish.instance import PublishInstance
 from agio_pipe.utils import path_solver
 from agio.core import settings
+from agio.core.domains import profile
 
 
 class PublishProcessingBase:
@@ -57,24 +58,29 @@ class PublishProcessingBase:
         context.update(self.create_file_context(orig_file))
         solver = path_solver.TemplateSolver(templates)
         full_path = solver.solve(self.template_name, context)
-        relative_path = Path(full_path).relative_to(context['project'].get_roots()['projects'])
+        company_root = Path(context['project'].get_roots()['projects']).joinpath(context['company'].code)   # TODO
+        relative_path = Path(full_path).relative_to(company_root)
         return full_path, relative_path.as_posix()
 
     def collect_context(self):
         # from instance
         instance_context = dict(
-            # company=
+            company=self.instance.project.get_company(),
             project=self.instance.project,
+            project_name=self.instance.project.name, # TODO remove
             task=self.instance.task,
+            task_name=self.instance.task.name,
             entity=self.instance.task.entity,
+            entity_name=self.instance.task.entity.name,
             product=self.instance.product,
             version=self.instance.version
         )
 
         # from host
         host_context = dict(
-            user=os.getlogin(),
+            user=profile.AProfile.current().full_name,
             current_date=datetime.now(),
+            date=datetime.now().strftime('%d.%m.%Y'),
         )
 
         # from current app TODO

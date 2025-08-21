@@ -291,20 +291,20 @@ class PublishDialog(QWidget):
 
         scene = SimplePublishScene()
         if workfile:
-            workfile_product = AProduct.find(self.task.entity.id, 'workfile', 'main')
+            workfile_product = AProduct.get_or_create(self.task.entity.id, 'Workfile', 'workfile', 'main')
             if not workfile_product:
                 raise RuntimeError('Workfile product not found')
             logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
             scene.create_container('Workfile', self.task, workfile_product, workfile)
         if review_file:
             # review
-            review_product = AProduct.find(self.task.entity.id, 'review', 'main')
+            review_product = AProduct.get_or_create(self.task.entity.id, 'Review', 'review', 'main')
             if not review_product:
                 raise RuntimeError('Review product not found')
             logger.debug('ADD Review %s %s %s', self.task, repr(review_product), review_file[0])
             scene.create_container('Review', self.task, review_product, review_file)
             # thumbnail
-            thumbnail_product = AProduct.find(self.task.entity.id, 'thumbnail', 'main')
+            thumbnail_product = AProduct.get_or_create(self.task.entity.id, 'Thumbnail', 'thumbnail', 'main')
             if not thumbnail_product:
                 raise RuntimeError('Thumbnail product not found')
             logger.debug('ADD Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])

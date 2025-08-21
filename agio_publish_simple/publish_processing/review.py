@@ -54,7 +54,12 @@ class PublishProcessingReview(PublishProcessingBase):
         output_dir.mkdir(parents=True, exist_ok=True)
         template = self.get_burn_in_template()
         for i, img in enumerate(seq):
-            variables = {**self.context, "frame_num": img.frame, "index": i}
+            variables = {
+                **self.context,
+                "frame_num": img.frame,
+                "index": i,
+                "source_length": len(seq)
+            }
             output_file = output_dir / img.name
             renderer = FrameStamp(img.path, template, variables)
             logger.info(f"Rendering {img.name}")
@@ -68,11 +73,11 @@ class PublishProcessingReview(PublishProcessingBase):
 
     def extract_sequence(self, source_files: list[str], max_files: int = None) -> list[str]:
         if len(source_files) == 1 and Path(source_files[0]).is_dir():
-            source_files = self.extract_sequence_from_dir(Path(source_files[0]))
+            source_files = sorted(self.extract_sequence_from_dir(Path(source_files[0])))
         # from video
         if len(source_files) == 1:
             if self.is_video_file(source_files[0]):
-                return ffmpeg_tools.video_to_sequence(source_files[0], self.tempdir/'from-video', max_files)
+                return sorted(ffmpeg_tools.video_to_sequence(source_files[0], self.tempdir/'from-video', max_files))
             # from single image
             else:
                 self.check_valid_image_format(source_files[0])
