@@ -6,25 +6,31 @@ import pyseq
 def get_ffmpeg_executable() -> str:
     return 'ffmpeg'
 
+COLOR_MATRIX_NAME_MAP = {
+    'rec709': 'bt709'
+}
 
-def sequence_to_video(sequence: list[str], output_dir: Path, fps: int):
+
+def sequence_to_video(sequence: list[str], output_dir: Path, fps: int, in_color='rec709', crf=18):
     sq = pyseq.Sequence(sequence)
     input_image_pattern = sq.format('%D%h%p%t')
     output_file = Path(output_dir) / f'output.mp4'
     output_file.parent.mkdir(parents=True, exist_ok=True)
+    colorspace = COLOR_MATRIX_NAME_MAP.get(in_color, in_color)
     cmd = [
         get_ffmpeg_executable(),
-        '-framerate', str(fps),
+        '-framerate', fps,
         '-i', input_image_pattern,
-        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+        '-vf', f'scale=trunc(iw/2)*2:trunc(ih/2)*2:'
+               f'in_color_matrix={colorspace}:in_range=full',
         '-c:v', 'libx264',
-        '-crf', '18',
+        '-crf', crf,
         '-preset', 'slow',
-        '-pix_fmt', 'yuv420p',
+        '-pix_fmt', 'yuv444p',
         output_file
     ]
     print('FFMPEG CMD:', ' '.join(map(str, cmd)))
-    resp = subprocess.run(cmd)
+    resp = subprocess.run(list(map(str, cmd)))
     if resp.returncode != 0:
         raise Exception('ffmpeg error')
     if not Path(output_file).exists():

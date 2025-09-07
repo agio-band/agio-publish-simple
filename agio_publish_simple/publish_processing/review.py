@@ -69,7 +69,7 @@ class PublishProcessingReview(PublishProcessingBase):
 
     def compile_to_video(self, sequence: list[str]) -> str:
         fps = self.instance.project.fields.get('fps')
-        return ffmpeg_tools.sequence_to_video(sequence, self.tempdir/'render-review', fps)
+        return ffmpeg_tools.sequence_to_video(sequence, self.tempdir/'render-review', fps=fps, crf=10)
 
     def extract_sequence(self, source_files: list[str], max_files: int = None) -> list[str]:
         if len(source_files) == 1 and Path(source_files[0]).is_dir():

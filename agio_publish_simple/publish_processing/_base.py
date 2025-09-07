@@ -64,15 +64,14 @@ class PublishProcessingBase:
 
     def collect_context(self):
         # from instance
+        cmp = self.instance.project.get_company()
         instance_context = dict(
-            company=self.instance.project.get_company(),
+            company=cmp,
             project=self.instance.project,
-            project_name=self.instance.project.name, # TODO remove
             task=self.instance.task,
-            task_name=self.instance.task.name,
             entity=self.instance.task.entity,
-            entity_name=self.instance.task.entity.name,
             product=self.instance.product,
+            variant=self.instance.product.variant,
             version=self.instance.version
         )
 

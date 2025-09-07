@@ -177,6 +177,11 @@ class PublishDialog(QWidget):
         self.drop_wd_2.update_source(path_list)
 
     def on_start_publish(self):
+        try:
+            self._check_is_publish_allowed()
+        except Exception as e:
+            QMessageBox.critical(self, 'Error', str(e))
+            return
         workfile = self.drop_wd_1.get_source()
         review_file = self.drop_wd_2.get_source()
         self.stackedWidget.setCurrentIndex(1)
@@ -260,10 +265,10 @@ class PublishDialog(QWidget):
         self.output_tb.append_error(text.strip().replace('\n', '<br>').replace(' ', '&nbsp;'))
 
     def process_done(self, exit_code, exit_status):
+        print('PROCESS EXIT CODE', exit_code)
+        self.output_tb.append_error(f'Exit code: {exit_code}')
         if exit_code == 0:
             self.on_complete()
-        else:
-            self.output_tb.append_error(f'Exit code: {exit_code}')
 
     def on_error(self, message):
         self.output_tb.append_error(message)
@@ -274,12 +279,10 @@ class PublishDialog(QWidget):
         if self._report_file is not None:
             report_file = Path(self._report_file)
             if report_file.is_file():
-                self.show_report(json.loads(report_file.read_text()))
-                return
-            if not os.getenv('AGIO_KEEP_REPORT_FILE') and os.path.exists(self._report_file):
-                os.remove(self._report_file)
-            else:
                 logger.info(f'Report file: {self._report_file}')
+                self.show_report(json.loads(report_file.read_text()))
+                if not os.getenv('AGIO_KEEP_REPORT_FILE') and os.path.exists(self._report_file):
+                    os.remove(self._report_file)
         # self.report_lb.setText('No reports')
 
     def build_scene(self, workfile, review_file, save_path: str = None):
@@ -357,6 +360,11 @@ class PublishDialog(QWidget):
             except Exception as e:
                 traceback.print_exc()
                 QMessageBox.critical(self, ' Error', str(e))
+
+    def _check_is_publish_allowed(self):
+        from agio_drive.utils import drive_app
+        if not drive_app.is_active():
+            raise Exception('Drive Client is not active')
 
 
 class Output(QTextBrowser):
