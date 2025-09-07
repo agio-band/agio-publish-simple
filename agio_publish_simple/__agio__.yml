@@ -1,6 +1,6 @@
 name: agio_publish_simple
 label: agio Publish Simple
-version: 0.0.1
+version: 0.0.2a
 description: Simple publish engine
 tags:
   - publish
@@ -24,3 +24,11 @@ plugins:
   - label: Simple Launcher Service
     implementations:
         - module: plugins/services/launcher_service.py
+
+  - label: Quick Simple Settings Dialog
+    implementations:
+      - module: plugins/commands/settings_command.py
+
+
+callbacks:
+  - callbacks/on_init.py

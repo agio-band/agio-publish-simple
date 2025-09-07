@@ -48,7 +48,7 @@ class PublishDialog(QWidget):
         ):
         super().__init__(*args)
         self.task = task
-        self.setWindowTitle('agio Publisher v0.0.1 DEMO')
+        self.setWindowTitle('agio Simple Publisher v0.0.2a')
         self.main_ly = QVBoxLayout(self)
         self.main_ly.setContentsMargins(-1, 0, -1, -1)
         self.stackedWidget = QStackedWidget()
