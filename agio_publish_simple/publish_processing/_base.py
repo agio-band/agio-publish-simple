@@ -17,10 +17,15 @@ class PublishProcessingBase:
     template_name = 'publish'
     publish_filename = 'not-set'
 
-    def __init__(self, instance: PublishInstance):
+    def __init__(self, instance: PublishInstance, publish_options: dict|None):
         self.instance = instance
+        self.publish_options = publish_options
         self.context = None
         self.__project_settings = None
+
+    @property
+    def is_no_file_mode(self):
+        return self.publish_options and 'no_files' in self.publish_options.keys()
 
     @property
     def project_settings(self):
@@ -65,7 +70,7 @@ class PublishProcessingBase:
     def collect_context(self):
         # from instance
         cmp = self.instance.project.get_company()
-        instance_context = dict(
+        instance_context = dict(    # TODO Use schema
             company=cmp,
             project=self.instance.project,
             task=self.instance.task,
@@ -110,6 +115,7 @@ class PublishProcessingBase:
         return file_context
 
     def copy_file_to(self, src_path: str, dst_path: str) -> None:
-        dist_path = Path(dst_path)
-        dist_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(src_path, dist_path)
+        if not self.is_no_file_mode:
+            dist_path = Path(dst_path)
+            dist_path.parent.mkdir(parents=True, exist_ok=True)
+            return shutil.copy(src_path, dist_path)

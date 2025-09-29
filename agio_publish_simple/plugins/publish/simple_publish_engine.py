@@ -23,7 +23,7 @@ class PublishEngineSimplePlugin(PublishEngineBasePlugin):
                     logger.info('Skip instance %s', inst.name)
                     continue
             publisher_cls = get_publisher(inst.product.type)
-            publisher = publisher_cls(inst)
+            publisher = publisher_cls(inst, options)
             published_files = publisher.publish(**options)
             if not published_files:
                 raise Exception(f'No published files created with instance {inst}')

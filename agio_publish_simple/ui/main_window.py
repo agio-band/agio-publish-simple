@@ -159,7 +159,10 @@ class PublishDialog(QWidget):
         QShortcut(QKeySequence("Ctrl+R"), self, activated=self.on_reset)
 
     def get_workspace_id(self):
-        return self.task.project.get_workspace().id
+        ws =  self.task.project.get_workspace()
+        if not ws:
+            raise Exception(f'No workspace found for project, {self.task.project.name}')
+        return ws.id
 
     def on_source_changed(self):
         if self.drop_wd_1.get_source() and self.drop_wd_2.get_source():
@@ -188,6 +191,7 @@ class PublishDialog(QWidget):
         try:
             self.start_process(workfile, review_file)
         except Exception as e:
+            traceback.print_exc()
             self.on_error(e)
 
     def on_cancel_publish(self):
@@ -239,7 +243,7 @@ class PublishDialog(QWidget):
 
     def start_subprocess(self, cmd):
         self.stackedWidget.setCurrentIndex(1)
-        self.output_tb.append('Start installation')
+        self.output_tb.append('Start Publishing')
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self.handle_stdout)
         self.process.readyReadStandardError.connect(self.handle_stderr)
@@ -250,6 +254,7 @@ class PublishDialog(QWidget):
                 env.insert(k, v)
         env.insert(env_names.WORKSPACE_ENV_NAME, self.get_workspace_id())
         self.process.setProcessEnvironment(env)
+        self.output_tb.append('CMD: ' + ' '.join(cmd))
         self.process.start(cmd[0], cmd[1:])
 
     def handle_stdout(self):

@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import QApplication
 
 from agio_pipe.entities.task import ATask
-from agio_publish_simple.simple_scene.scene import SimplePublishScene
-from agio_publish_simple.ui.main_window import PublishDialog
+from agio_publish_simple.simple_scene import scene as simple_scene
+from agio_publish_simple.ui import main_window
 
 
 def load_containers(scene_file, selected_instances: tuple[str] = None):
-    scene_plugin = SimplePublishScene(scene_file)
+    scene_plugin = simple_scene.SimplePublishScene(scene_file)
     containers = scene_plugin.get_containers()
     if selected_instances:
         containers = [con for con in containers if con.name in selected_instances]
@@ -24,7 +24,7 @@ def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, tas
     if not task:
         raise Exception("No task specified")
     app = QApplication([])
-    dialog = PublishDialog(
+    dialog = main_window.PublishDialog(
         task=task,
         workfile_extensions=['.mb', '.ma', '.hip', '.psd', '.max', '.blend', '.ae'],
         review_extensions=['.png', '.jpg', '.mp4', '.mov', '.avi']

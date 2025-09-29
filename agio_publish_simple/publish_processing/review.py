@@ -21,12 +21,21 @@ class PublishProcessingReview(PublishProcessingBase):
 
     def execute(self, **options):
         # get one single file and publish to project
-        review_file = self.make_review_output(self.instance.sources)
+        if self.is_no_file_mode:    # use original video file without processing
+            # no file mode
+            if len(self.instance.sources) != 1:
+                raise PublishError('Review only supports one source')
+            orig_file = review_file = self.instance.sources[0]
+            if not self.is_video_file(review_file) and not self.is_image_file(review_file):
+                raise PublishError(f'Review only supports video and image files: {review_file}')
+        else:
+            review_file = self.make_review_output(self.instance.sources)
+            orig_file = None
         full_path, rel_path = self.get_save_path(review_file)
-        logger.info('Workfile save path %s', rel_path)
+        logger.info('Review save path %s', rel_path)
         self.copy_file_to(review_file, full_path)
-        print('FILE SAVED TO:', full_path)
         file = PublishedFileFull(
+            orig_path=orig_file,
             path=full_path,
             relative_path=rel_path,
         )
@@ -112,6 +121,10 @@ class PublishProcessingReview(PublishProcessingBase):
     def is_video_file(self, file_name: str) -> bool:
         mtp = mimetypes.guess_type(str(file_name))[0]
         return mtp.startswith('video')
+
+    def is_image_file(self, file_name: str) -> bool:
+        mtp = mimetypes.guess_type(str(file_name))[0]
+        return mtp.startswith('image')
 
     def extract_sequence_from_dir(self, path: Path|str) -> list[str]:
         return [x.as_posix() for x in Path(path).iterdir()]

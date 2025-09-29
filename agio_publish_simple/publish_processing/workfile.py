@@ -22,6 +22,7 @@ class PublishProcessingWorkfile(PublishProcessingBase):
         logger.info('Workfile save path %s', rel_path)
         self.copy_file_to(work_file, full_path)
         file = PublishedFileFull(
+            orig_path=work_file,
             path=full_path,
             relative_path=rel_path,
         )
