@@ -11,6 +11,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 
 from agio.core import env_names
+from agio.core.events import emit
 from agio_publish_simple.ui import drop_widget
 from agio_pipe.entities.task import ATask
 
@@ -180,11 +181,6 @@ class PublishDialog(QWidget):
         self.drop_wd_2.update_source(path_list)
 
     def on_start_publish(self):
-        try:
-            self._check_is_publish_allowed()
-        except Exception as e:
-            QMessageBox.critical(self, 'Error', str(e))
-            return
         workfile = self.drop_wd_1.get_source()
         review_file = self.drop_wd_2.get_source()
         self.stackedWidget.setCurrentIndex(1)
@@ -365,12 +361,6 @@ class PublishDialog(QWidget):
             except Exception as e:
                 traceback.print_exc()
                 QMessageBox.critical(self, ' Error', str(e))
-
-    def _check_is_publish_allowed(self):
-        # TODO use callback
-        from agio_drive.utils import drive_app
-        # if not drive_app.is_active():
-        #     raise Exception('Drive Client is not active')
 
 
 class Output(QTextBrowser):
