@@ -89,8 +89,8 @@ class PublishProcessingBase:
 
         # from current app TODO
         app_context = dict(
-            app_name='agio-publish-simple',
-            app_version='0.0.1'
+            app_name='agio-publish-simple', # TODO
+            app_version='0.0.1' # TODO
         )
 
         # from local settings

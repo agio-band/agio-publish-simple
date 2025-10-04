@@ -9,10 +9,12 @@ from .export_container import SimpleSceneExportContainer
 
 
 class SimplePublishScene:
-    def __init__(self, scene_file: str = None):
+    def __init__(self, scene_file: str|dict = None):
         self.containers = {}
-        if scene_file is not None:
+        if isinstance(scene_file, (str, Path)):
             self.load_from_file(scene_file)
+        elif isinstance(scene_file, dict):
+            self.load_from_dict(scene_file)
 
     def __str__(self) -> str:
         return "SimpleScene: {}".format(self.containers)
@@ -24,7 +26,10 @@ class SimplePublishScene:
         file = Path(file).expanduser()
         with file.open("r") as f:
             json_data = json.load(f)
-        for data in json_data["containers"]:
+        self.load_from_dict(json_data)
+
+    def load_from_dict(self, data: dict) -> None:
+        for data in data["containers"]:
             container = SimpleSceneExportContainer(data)
             self.add_container(container)
 
@@ -42,10 +47,11 @@ class SimplePublishScene:
             task: ATask,
             product: AProduct,
             sources: list[str] = None,
+            id: str = None,
         ) -> SimpleSceneExportContainer:
         if not isinstance(sources, Iterable):
             raise TypeError("Sources must be a list")
-        cont = SimpleSceneExportContainer.create(name=name, task=task, product=product, source_objects=sources)
+        cont = SimpleSceneExportContainer.create(name=name, task=task, product=product, source_objects=sources, id=id)
         self.add_container(cont)
         return cont
 

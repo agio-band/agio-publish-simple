@@ -16,14 +16,14 @@ class SimpleLauncherService(ServicePlugin):
     def open_publisher_dialog(self, *args, task_id: str, **kwargs):
         logger.info(f'Start standalone publisher with task {task_id}')
         workspace_id = None # ATask(task_id).project.workspace_id
-        args = [
+        cmd_args = [
             'pub',
             *args,
-            '--task_id', task_id,
+            '--task-id', task_id,
             '--ui',
         ]
         launch_utils.exec_agio_command(
-            args=args,
+            args=cmd_args,
             workspace=workspace_id,
         )
 

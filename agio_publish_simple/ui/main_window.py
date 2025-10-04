@@ -213,18 +213,19 @@ class PublishDialog(QWidget):
         text = []
         projects = {}
         tasks = {}
-        for version in result_data['new_versions']:
-            task_id = version['new_version']['entity']['id']
+        for inst in result_data['instances']:
+            task_id = inst['task_id']
             task = tasks.get(task_id) or ATask(task_id)
             project = projects.get(task.project_id) or task.project
             tasks[task_id] = task
             projects[task.project_id] = project
             all_roots = project.get_roots()
             root = all_roots.get('projects')
+            new_version = inst['results']['new_version']
             if not root:
                 raise ValueError(f'No root named "projects". Existing: {all_roots}')
-            text.append(f'<b>{version['new_version']['product']['name']}</b>: v{int(version['new_version']["version"])}')
-            for file in version['published_files']:
+            text.append(f'<b>{new_version['product']['name']}</b>: v{int(new_version["version"])}')
+            for file in inst['results']['published_files']:
                 text.append(f'<br> {root}/{file["path"]}')
             text.append('<br><br>')
         self.report_lb.setText(''.join(text))
@@ -233,9 +234,9 @@ class PublishDialog(QWidget):
         scene_file = self.build_scene(workfile, review_file)
         self._report_file = tempfile.mktemp(suffix='.json')
         cmd = [
-            sys.executable, '-m', 'agio',
+            sys.executable, '-m', 'agio',   # TODO use core func to get args
             'pub',
-            scene_file,
+            '-s', scene_file,
             '-o', self._report_file
         ]
         self.output_tb.append(' '.join(cmd))
@@ -317,7 +318,6 @@ class PublishDialog(QWidget):
                 raise RuntimeError('Thumbnail product not found')
             logger.debug('ADD Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])
             scene.create_container('Thumbnail', self.task, thumbnail_product, review_file)
-
         save_path = save_path or tempfile.mktemp(suffix='.json')
         scene.save(save_path)
         return save_path
@@ -367,9 +367,10 @@ class PublishDialog(QWidget):
                 QMessageBox.critical(self, ' Error', str(e))
 
     def _check_is_publish_allowed(self):
+        # TODO use callback
         from agio_drive.utils import drive_app
-        if not drive_app.is_active():
-            raise Exception('Drive Client is not active')
+        # if not drive_app.is_active():
+        #     raise Exception('Drive Client is not active')
 
 
 class Output(QTextBrowser):

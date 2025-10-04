@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 from agio_pipe.entities.product import AProduct
@@ -25,7 +26,12 @@ class SimpleSceneExportContainer(ExportContainerBase):
 
     @property
     def id(self):
+        if 'id' not in self.obj:
+            self.obj['id'] = uuid4().hex
         return self.obj['id']
+
+    def set_id(self, value):
+        self.obj['id'] = value
 
     @classmethod
     def create_scene_container(cls, name: str):
@@ -48,13 +54,30 @@ class SimpleSceneExportContainer(ExportContainerBase):
     def set_product(self, product: AProduct):
         self.obj['product'] = product
 
-    def get_product(self) -> AProduct:
+    def get_product(self) -> AProduct|None:
+        if 'product' not in self.obj:
+            if 'product_id' in self.obj:
+                self.obj['product'] = AProduct(self.obj['product_id'])
+            elif 'product_type' in self.obj:
+                self.obj['product'] = AProduct.get_or_create(
+                    entity_id=self.obj['task'].entity_id,
+                    name=self.obj.get('product_name') or self.obj['product_type'].title(),
+                    product_type=self.obj['product_type'],
+                    variant=self.obj['variant']
+                )
+            else:
+                return
+                # raise ValueError('Product ID or Type name must be provided')
         return self.obj['product']
 
-    def set_task(self, task: 'ATask'):
+    def set_task(self, task: ATask):
         self.obj['task'] = task
 
-    def get_task(self) -> 'ATask':
+    def get_task(self) -> ATask|None:
+        if not 'task' in self.obj:
+            if not 'task_id' in self.obj:
+                return
+            self.obj['task'] = ATask(self.obj['task_id'])
         return self.obj.get('task')
 
     def set_options(self, options: dict):
