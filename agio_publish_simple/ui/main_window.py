@@ -236,7 +236,7 @@ class PublishDialog(QWidget):
         cmd = [
             sys.executable, '-m', 'agio',   # TODO use core func to get args
             'pub',
-            '-s', scene_file,
+            scene_file,
             '-o', self._report_file
         ]
         self.output_tb.append(' '.join(cmd))
