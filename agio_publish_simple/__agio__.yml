@@ -6,13 +6,13 @@ tags:
   - publish
 
 urls:
-  source_url: "https://github.com/agio-band/agio-pipe.git"
+  source_url: "https://github.com/agio-band/agio-publish-simple.git"
   home_page: ""
   documentation: ""
-  bug_tracker: "https://github.com/agio-band/agio-pipe/issues"
+  bug_tracker: "https://github.com/agio-band/agio-publish-simple/issues"
 
-required_packages: [
-  'agio_pipe>=0.0.1'
+agio_package_dependencies: [
+  'agio-pipe==0.0.1'
 ]
 
 plugins:
