@@ -1,6 +1,6 @@
 name: agio_publish_simple
 label: agio Publish Simple
-version: 0.0.2a
+version: 0.0.3
 description: Simple publish engine
 tags:
   - publish
