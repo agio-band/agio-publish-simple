@@ -3,8 +3,6 @@ name = "agio-publish-simple"
 version = "0.0.3"
 requires-python = ">=3.10"
 dependencies = [
-    "frame-stamp",
+    "frame-stamp==0.1.9",
 ]
 
-[tool.uv.sources]
-frame-stamp = { git = "https://github.com/paulwinex/frame-stamp.git", rev = "0.1.9" }
