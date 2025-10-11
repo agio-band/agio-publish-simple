@@ -220,7 +220,7 @@ class PublishDialog(QWidget):
             new_version = inst['results']['new_version']
             if not root:
                 raise ValueError(f'No root named "projects". Existing: {all_roots}')
-            text.append(f'<b>{new_version['product']['name']}</b>: v{int(new_version["version"])}')
+            text.append(f"<b>{new_version['product']['name']}</b>: v{int(new_version['version'])}")
             for file in inst['results']['published_files']:
                 text.append(f'<br> {root}/{file["path"]}')
             text.append('<br><br>')
