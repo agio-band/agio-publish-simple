@@ -3,6 +3,7 @@ import logging
 from agio.core.plugins.base_service import ServicePlugin, make_action
 from agio.core.utils import launch_utils
 from agio_pipe.entities.task import ATask
+from agio_desk.tools import qt
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,11 @@ class SimpleLauncherService(ServicePlugin):
     @make_action(menu_name='task.launcher', app_name='front')
     def open_publisher_dialog(self, *args, task_id: str, **kwargs):
         logger.info(f'Start standalone publisher with task {task_id}')
-        project = ATask(task_id).project
+        try:
+            project = ATask(task_id).project
+        except Exception as e:
+            qt.message_dialog('Error', 'Task not found', 'error')
+            return
         if not project.workspace_id:
             raise ValueError(f'Workspace not set for project "{project.name}"')
         cmd_args = [
