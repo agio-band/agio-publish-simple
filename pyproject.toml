@@ -4,6 +4,7 @@ version = "0.0.3"
 requires-python = ">=3.10"
 dependencies = [
     "frame-stamp==0.1.9",
+    "pyside6>=6.10.0",
 ]
 
 [tool.setuptools]
@@ -12,4 +13,5 @@ include-package-data = true
 [tool.setuptools.package-data]
 "agio_publish_simple" = [
     "__agio__.yml",
+    "resources/**"
 ]
