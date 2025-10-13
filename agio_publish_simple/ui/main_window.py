@@ -11,7 +11,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 
 from agio.core import env_names
-from agio.core.events import emit
+from agio.core.pkg.resources import get_res
 from agio_publish_simple.ui import drop_widget
 from agio_pipe.entities.task import ATask
 
@@ -35,7 +35,6 @@ Publishing Done!
 '''
 
 logger = logging.getLogger(__name__)
-css_file = Path(__file__).parent/'style.css'
 
 
 class PublishDialog(QWidget):
@@ -172,7 +171,11 @@ class PublishDialog(QWidget):
             self.start_btn.setEnabled(False)
 
     def apply_style(self):
-        self.setStyleSheet(css_file.read_text())
+        css_file = get_res('publish-simple/style.css')
+        if not css_file:
+            logger.warning('No style file found Simple Publish UI')
+            return
+        self.setStyleSheet(Path(css_file).read_text())
 
     def set_workfile(self, paths: list):
         self.drop_wd_1.update_source(paths)

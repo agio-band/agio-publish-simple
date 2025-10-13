@@ -12,7 +12,8 @@ urls:
   bug_tracker: "https://github.com/agio-band/agio-publish-simple/issues"
 
 agio_package_dependencies: [
-  'agio-pipe==0.0.1'
+  'agio-pipe==0.0.1',
+  'agio-desk==0.0.1'
 ]
 
 plugins:

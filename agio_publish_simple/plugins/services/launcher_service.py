@@ -2,6 +2,7 @@ import logging
 
 from agio.core.plugins.base_service import ServicePlugin, make_action
 from agio.core.utils import launch_utils
+from agio_pipe.entities.task import ATask
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,9 @@ class SimpleLauncherService(ServicePlugin):
     @make_action(menu_name='task.launcher', app_name='front')
     def open_publisher_dialog(self, *args, task_id: str, **kwargs):
         logger.info(f'Start standalone publisher with task {task_id}')
-        workspace_id = None # ATask(task_id).project.workspace_id
+        project = ATask(task_id).project
+        if not project.workspace_id:
+            raise ValueError(f'Workspace not set for project "{project.name}"')
         cmd_args = [
             'pub',
             *args,
@@ -24,7 +27,8 @@ class SimpleLauncherService(ServicePlugin):
         ]
         launch_utils.exec_agio_command(
             args=cmd_args,
-            workspace=workspace_id,
+            workspace=project.workspace_id,
+            detached=True
         )
 
 

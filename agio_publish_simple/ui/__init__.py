@@ -1,4 +1,6 @@
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QCursor, QScreen
+from PySide6.QtCore import QPoint
 
 from agio_pipe.entities.task import ATask
 from agio_publish_simple.simple_scene import scene as simple_scene
@@ -36,9 +38,24 @@ def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, tas
         elif product_type == 'review':
             dialog.set_review(cont.get_sources())
     dialog.show()
+    show_on_center(dialog, app)
     try:
         app.exec()
     except KeyboardInterrupt:
         app.quit()
 
 
+def show_on_center(widget, app):
+    cursor_pos: QPoint = QCursor.pos()
+    current_screen: QScreen = app.screenAt(cursor_pos)
+    if current_screen is None:
+        current_screen = app.primaryScreen()
+        if current_screen is None:
+            print("Ошибка: Не удалось найти ни один экран.")
+            return
+    screen_geometry = current_screen.availableGeometry()
+    widget_frame = widget.frameGeometry()
+    new_x = screen_geometry.x() + (screen_geometry.width() - widget_frame.width()) // 2
+    new_y = screen_geometry.y() + (screen_geometry.height() - widget_frame.height()) // 2
+    widget.move(new_x, new_y)
+    widget.show()
