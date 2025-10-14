@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QApplication
 from agio_pipe.entities.task import ATask
 from agio_publish_simple.simple_scene import scene as simple_scene
 from agio_publish_simple.ui import main_window
-from agio_desk.tools import qt
+from agio.tools.qt import open_widget
 
 
 def load_containers(scene_file, selected_instances: tuple[str] = None):
@@ -36,6 +36,6 @@ def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, tas
             dialog.set_workfile(cont.get_sources())
         elif product_type == 'review':
             dialog.set_review(cont.get_sources())
-    qt.open_dialog(dialog, qapp=app, app_name='agio Publish Simple')
+    open_widget(dialog, qapp=app, app_name='agio Publish Simple')
 
 
