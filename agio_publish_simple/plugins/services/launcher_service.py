@@ -2,8 +2,8 @@ import logging
 
 from agio.core.plugins.base_service import ServicePlugin, make_action
 from agio.core.utils import launch_utils
+from agio.tools import qt
 from agio_pipe.entities.task import ATask
-from agio_desk.tools import qt
 
 logger = logging.getLogger(__name__)
 
