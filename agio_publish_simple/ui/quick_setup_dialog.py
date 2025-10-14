@@ -12,7 +12,7 @@ from PySide6.QtGui import QIcon
 logger = logging.getLogger(__name__)
 
 
-class QuickSetupDialog(QDialog):
+class QuickSetupDialog(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_ly = QVBoxLayout(self)

@@ -20,8 +20,10 @@ class SimpleLauncherService(ServicePlugin):
         try:
             project = ATask(task_id).project
         except Exception as e:
-            qt.message_dialog('Error', 'Task not found', 'error')
+            print(e)
+            qt.show_message_dialog('Task not found', 'Error', 'error')
             return
+
         if not project.workspace_id:
             raise ValueError(f'Workspace not set for project "{project.name}"')
         cmd_args = [
@@ -49,6 +51,6 @@ class SimpleLauncherService(ServicePlugin):
         launch_utils.exec_agio_command(
             args=args,
             workspace=None,
-            detached=False,
+            detached=True,
             new_console=False
         )
