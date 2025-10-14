@@ -1,14 +1,15 @@
+import logging
 import sys
 import tempfile
 from pathlib import Path
 
+from agio.core.pkg.resources import get_res
 from agio.core.settings import get_local_settings, save_local_settings
 from agio.core.pkg import resources
 from PySide6.QtWidgets import *
 from PySide6.QtGui import QIcon
 
-
-css_file = Path(__file__).parent/'style.css'
+logger = logging.getLogger(__name__)
 
 
 class QuickSetupDialog(QDialog):
@@ -34,7 +35,6 @@ class QuickSetupDialog(QDialog):
         self.init()
 
     def init(self):
-        self.setStyleSheet(css_file.read_text())
         settings = self.load_settings()
         for root in settings:
             if root.name == 'projects':
@@ -43,6 +43,7 @@ class QuickSetupDialog(QDialog):
                 self.temp_dir_le.setText(str(Path(root.path)))
         if not self.temp_dir_le.text():
             self.temp_dir_le.setText(tempfile.gettempdir())
+        self.apply_style()
 
     def save(self):
         try:
@@ -53,6 +54,12 @@ class QuickSetupDialog(QDialog):
         self.save_settings(data)
         self.close()
 
+    def apply_style(self):
+        css_file = get_res('publish-simple/style.css')
+        if not css_file:
+            logger.warning('No style file found Simple Publish UI')
+            return
+        self.setStyleSheet(Path(css_file).read_text())
 
     def collect_data(self):
         if not self.projects_root_le.text().strip():
