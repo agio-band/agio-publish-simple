@@ -1,4 +1,6 @@
 import logging
+import os
+import traceback
 
 from agio.core.plugins.base_service import ServicePlugin, make_action
 from agio.core.utils import launch_utils
@@ -20,8 +22,8 @@ class SimpleLauncherService(ServicePlugin):
         try:
             project = ATask(task_id).project
         except Exception as e:
-            print(e)
-            qt.show_message_dialog('Task not found', 'Error', 'error')
+            traceback.print_exc()
+            qt.show_message_dialog('Task not found', 'Error', 'error')  # todo: replace with emit event
             return
 
         if not project.workspace_id:
@@ -35,7 +37,7 @@ class SimpleLauncherService(ServicePlugin):
         launch_utils.exec_agio_command(
             args=cmd_args,
             workspace=project.workspace_id,
-            detached=True,
+            detached=os.name != 'nt',   # temporary fix for windows
             # new_console=True
         )
 
@@ -51,6 +53,6 @@ class SimpleLauncherService(ServicePlugin):
         launch_utils.exec_agio_command(
             args=args,
             workspace=None,
-            detached=True,
+            detached=os.name != 'nt',   # temporary fix for windows
             new_console=False
         )
