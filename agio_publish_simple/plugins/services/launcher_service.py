@@ -33,7 +33,7 @@ class SimpleLauncherService(ServicePlugin):
             args=cmd_args,
             workspace=project.workspace_id,
             detached=os.name != 'nt',   # temporary fix for windows
-            # new_console=True
+            new_console=True
         )
 
 
