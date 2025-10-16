@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 @callback('agio_desk.app.before_launched')
 def on_app_startup(event: AEvent):
     settings = get_local_settings()
-    if not settings.get('agio_pipe.local_roots'):
+    if not settings.get('agio_pipe.local_roots', None):
         logger.info('No local roots configured')
         args = [
             'simple_settings',
