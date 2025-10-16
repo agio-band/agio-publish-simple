@@ -19,12 +19,7 @@ class SimpleLauncherService(ServicePlugin):
     @make_action(menu_name='task.launcher', app_name='front')
     def open_publisher_dialog(self, *args, task_id: str, **kwargs):
         logger.info(f'Start standalone publisher with task {task_id}')
-        try:
-            project = ATask(task_id).project
-        except Exception as e:
-            traceback.print_exc()
-            qt.show_message_dialog('Task not found', 'Error', 'error')  # todo: replace with emit event
-            return
+        project = ATask(task_id).project
 
         if not project.workspace_id:
             raise ValueError(f'Workspace not set for project "{project.name}"')
