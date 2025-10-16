@@ -38,6 +38,7 @@ def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, tas
             elif product_type == 'review':
                 dialog.set_review(cont.get_sources())
         dialog.show()
+        dialog.activateWindow()
 
 
 
