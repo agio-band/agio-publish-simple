@@ -270,7 +270,7 @@ class PublishDialog(QWidget):
         self.output_tb.append_error(text.strip().replace('\n', '<br>').replace(' ', '&nbsp;'))
 
     def process_done(self, exit_code, exit_status):
-        print('PROCESS EXIT CODE', exit_code)
+        print('Exit code:', exit_code)
         self.output_tb.append_error(f'Exit code: {exit_code}')
         if exit_code == 0:
             self.on_complete()
@@ -282,6 +282,7 @@ class PublishDialog(QWidget):
         self.stackedWidget.setCurrentIndex(2)
         self.report_lb.setText('Publishing done!')
         if self._report_file is not None:
+            return
             report_file = Path(self._report_file)
             if report_file.is_file():
                 logger.info(f'Report file: {self._report_file}')

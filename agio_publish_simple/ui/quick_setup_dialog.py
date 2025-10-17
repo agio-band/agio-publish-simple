@@ -18,7 +18,7 @@ class QuickSetupDialog(QWidget):
         self.main_ly = QVBoxLayout(self)
         self.settings_gb = QGroupBox('Local Settings')
         self.form_ly = QFormLayout(self.settings_gb)
-        self.projects_root_lb = QLabel("Projects Mount Point")
+        self.projects_root_lb = QLabel("agio.drive Mount Point")
         self.form_ly.setWidget(0, QFormLayout.ItemRole.LabelRole, self.projects_root_lb)
         self.projects_root_le = QLineEdit(self.settings_gb)
         self.form_ly.setWidget(0, QFormLayout.ItemRole.FieldRole, self.projects_root_le)
