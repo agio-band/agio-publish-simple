@@ -175,7 +175,7 @@ class PublishDialog(QWidget):
         if not css_file:
             logger.warning('No style file found Simple Publish UI')
             return
-        self.setStyleSheet(Path(css_file).read_text())
+        self.setStyleSheet(Path(css_file).read_text(encoding='utf-8'))
 
     def set_workfile(self, paths: list):
         self.drop_wd_1.update_source(paths)
@@ -286,7 +286,7 @@ class PublishDialog(QWidget):
             report_file = Path(self._report_file)
             if report_file.is_file():
                 logger.info(f'Report file: {self._report_file}')
-                self.show_report(json.loads(report_file.read_text()))
+                self.show_report(json.loads(report_file.read_text(encoding='utf-8')))
                 if not os.getenv('AGIO_KEEP_REPORT_FILE') and os.path.exists(self._report_file):
                     os.remove(self._report_file)
         # self.report_lb.setText('No reports')

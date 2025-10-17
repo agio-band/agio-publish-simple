@@ -59,7 +59,7 @@ class QuickSetupDialog(QWidget):
         if not css_file:
             logger.warning('No style file found Simple Publish UI')
             return
-        self.setStyleSheet(Path(css_file).read_text())
+        self.setStyleSheet(Path(css_file).read_text(encoding='utf-8'))
 
     def collect_data(self):
         if not self.projects_root_le.text().strip():
