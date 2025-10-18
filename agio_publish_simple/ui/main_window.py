@@ -13,6 +13,7 @@ from PySide6.QtCore import *
 from agio.core import env_names
 from agio.core.pkg.resources import get_res
 from agio_publish_simple.ui import drop_widget
+from agio_publish_simple import __version__
 from agio_pipe.entities.task import ATask
 
 # 🗂️ 📦 📌
@@ -48,7 +49,7 @@ class PublishDialog(QWidget):
         ):
         super().__init__(*args)
         self.task = task
-        self.setWindowTitle('agio Simple Publisher v0.0.2a')
+        self.setWindowTitle(f'agio Simple Publisher v{__version__}')
         self.main_ly = QVBoxLayout(self)
         self.main_ly.setContentsMargins(-1, 0, -1, -1)
         self.stackedWidget = QStackedWidget()
