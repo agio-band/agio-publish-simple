@@ -5,6 +5,7 @@ from datetime import datetime
 from functools import cache, cached_property
 from pathlib import Path
 
+from agio.core.events import emit
 from agio_pipe.exceptions import PublishError
 from agio_pipe.publish.instance import PublishInstance
 from agio_pipe.utils import path_solver
@@ -57,20 +58,24 @@ class PublishProcessingBase:
         return templates
 
     def get_save_path(self, orig_file: str|Path) -> [str, str]:
-        # TODO remake arch of saving
         templates = self.get_export_templates()
         context = self.context.copy()
         context.update(self.create_file_context(orig_file))
         solver = path_solver.TemplateSolver(templates)
+        emit('pipe.publish.save_file_context_ready', {'context': context, 'template_name': self.template_name})
         full_path = solver.solve(self.template_name, context)
         company_root = Path(context['project'].get_roots()['projects']).joinpath(context['company'].code)   # TODO
         relative_path = Path(full_path).relative_to(company_root)
+        emit('pipe.publish.save_path_ready', {'full_path': full_path, 'relative_path': relative_path.as_posix()})
+        self.context['save_path'] = full_path
+        self.context['save_path_relative'] = relative_path.as_posix()
         return full_path, relative_path.as_posix()
 
     def collect_context(self):
         # from instance
         cmp = self.instance.project.get_company()
         instance_context = dict(    # TODO Use schema
+            mount_point=self.instance.project.mount_root,
             company=cmp,
             project=self.instance.project,
             task=self.instance.task,
@@ -88,21 +93,25 @@ class PublishProcessingBase:
         )
 
         # from current app TODO
+        from agio_publish_simple import __version__
+
         app_context = dict(
-            app_name='agio-publish-simple', # TODO
-            app_version='0.0.1' # TODO
+            app_name='agio-publish-simple',
+            app_version=__version__
         )
 
         # from local settings
         local_settings_context = dict(
             local_roots=self.instance.project.get_roots(),
         )
-        return {
+        full_context = {
             **instance_context,
             **host_context,
             **app_context,
             **local_settings_context,
         }
+        emit('pipe.publish.context_ready', {'context': full_context})
+        return full_context
 
     def create_file_context(self, file_path: str|Path) -> dict:
         file_path = Path(file_path)
