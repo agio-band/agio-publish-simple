@@ -9,6 +9,9 @@ from agio.core.pkg import resources
 from PySide6.QtWidgets import *
 from PySide6.QtGui import QIcon
 
+from agio.tools.paths import expand_windows_path
+from agio.tools.qt import center_on_screen
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,8 +44,21 @@ class QuickSetupDialog(QWidget):
                 self.projects_root_le.setText(str(Path(root.path)))
             elif root.name == 'temp':
                 self.temp_dir_le.setText(str(Path(root.path)))
+        if not self.projects_root_le.text():
+            try:
+                from agio_drive.utils import drive_app
+                paths = drive_app.get_mount_paths()
+                if paths:
+                    enabled = [x['path'] for x in paths if not x['disabled']]
+                    if enabled:
+                        self.projects_root_le.setText(enabled[0])
+            except (ImportError, ModuleNotFoundError):
+                pass
+            except Exception as e:
+                logger.warning(f'Failed to load drive mount points: {e}')
+
         if not self.temp_dir_le.text():
-            self.temp_dir_le.setText(tempfile.gettempdir())
+            self.temp_dir_le.setText(expand_windows_path(tempfile.gettempdir()))
         self.apply_style()
 
     def save(self):
@@ -51,7 +67,8 @@ class QuickSetupDialog(QWidget):
         except Exception as e:
             QMessageBox.critical(self, 'Error', str(e))
             return
-        self.save_settings(data)
+        self.save_settings({'agio_pipe.local_roots': data})
+        QMessageBox.information(self, 'Local settings', 'Successfully saved')
         self.close()
 
     def apply_style(self):
@@ -69,13 +86,10 @@ class QuickSetupDialog(QWidget):
             raise FileNotFoundError('Path not exists: {}'.format(projects_root))
         temp_dir = Path(self.temp_dir_le.text())
         temp_dir.mkdir(parents=True, exist_ok=True)
-
-        data = {
-            'agio_pipe.local_roots':[
+        data = [
                 {'name': 'projects', 'path': projects_root.as_posix()},
                 {'name': 'temp', 'path': temp_dir.as_posix()},
             ]
-        }
         return data
 
     def load_settings(self):
@@ -92,6 +106,7 @@ class QuickSetupDialog(QWidget):
 def show_dialog():
     app = QApplication.instance() or QApplication(sys.argv)
     dialog = QuickSetupDialog()
+    center_on_screen(dialog)
     dialog.show()
     app.exec_()
 

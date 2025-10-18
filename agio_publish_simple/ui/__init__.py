@@ -37,6 +37,7 @@ def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, tas
                 dialog.set_workfile(cont.get_sources())
             elif product_type == 'review':
                 dialog.set_review(cont.get_sources())
+        qt.center_on_screen(dialog)
         dialog.show()
         dialog.activateWindow()
 
