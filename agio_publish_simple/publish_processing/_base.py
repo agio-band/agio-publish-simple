@@ -10,7 +10,7 @@ from agio_pipe.exceptions import PublishError
 from agio_pipe.publish.instance import PublishInstance
 from agio_pipe.utils import path_solver
 from agio.core import settings
-from agio.core.domains import profile
+from agio.core.entities import profile
 
 
 class PublishProcessingBase:
