@@ -166,7 +166,7 @@ class PublishDialog(QWidget):
         return ws.id
 
     def on_source_changed(self):
-        if self.drop_wd_1.get_source() and self.drop_wd_2.get_source():
+        if self.drop_wd_1.get_source():# and self.drop_wd_2.get_source():
             self.start_btn.setEnabled(True)
         else:
             self.start_btn.setEnabled(False)
@@ -306,6 +306,8 @@ class PublishDialog(QWidget):
                 raise RuntimeError('Workfile product not found')
             logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
             scene.create_container('Workfile', self.task, workfile_product, workfile)
+        else:
+            raise Exception('Workfile is required')
         if review_file:
             # review
             review_product = AProduct.get_or_create(self.task.entity.id, 'Review', 'review', 'main')
