@@ -66,9 +66,13 @@ class PublishProcessingBase:
         full_path = solver.solve(self.template_name, context)
         company_root = Path(context['project'].get_roots()['projects']).joinpath(context['company'].code)   # TODO
         relative_path = Path(full_path).relative_to(company_root)
+        self.context['current_template_name'] = self.template_name
+        self.context['current_template'] = templates[self.template_name]
+        self.context['templates'] = templates
         emit('pipe.publish.save_path_ready', {'full_path': full_path, 'relative_path': relative_path.as_posix()})
         self.context['save_path'] = full_path
         self.context['save_path_relative'] = relative_path.as_posix()
+        emit('pipe.publish.file_context_ready', {'context': self.context, 'template_name': self.template_name})
         return full_path, relative_path.as_posix()
 
     def collect_context(self):
