@@ -12,9 +12,11 @@ from PySide6.QtCore import *
 
 from agio.core import env_names
 from agio.core.pkg.resources import get_res
+# from agio_pipe.entities import product_type
 from agio_publish_simple.ui import drop_widget
 from agio_publish_simple import __version__
 from agio_pipe.entities.task import ATask
+from agio.tools import paths
 
 # 🗂️ 📦 📌
 title1 = '''
@@ -119,12 +121,12 @@ class PublishDialog(QWidget):
         self.main_ly_3.addWidget(self.line_3)
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
-        self.report_lb = QLabel('Waiting...')
-        scroll.setWidget(self.report_lb)
-        self.report_lb.setOpenExternalLinks(True)
-        self.report_lb.setTextInteractionFlags(Qt.TextBrowserInteraction)
-        self.report_lb.setTextFormat(Qt.RichText)
-        self.report_lb.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignTop)
+        self.report_tb = QTextBrowser()
+        scroll.setWidget(self.report_tb)
+        self.report_tb.setOpenExternalLinks(False)
+        self.report_tb.setOpenLinks(False)
+        self.report_tb.setWordWrapMode(QTextOption.NoWrap)
+        self.report_tb.anchorClicked.connect(self.on_report_link_clicked)
         self.main_ly_3.addWidget(scroll)
         self.line_4 = QFrame(self.page_3)
         self.line_4.setFrameShape(QFrame.Shape.HLine)
@@ -166,10 +168,15 @@ class PublishDialog(QWidget):
         return ws.id
 
     def on_source_changed(self):
-        if self.drop_wd_1.get_source():# and self.drop_wd_2.get_source():
+        if self.drop_wd_1.get_source():
             self.start_btn.setEnabled(True)
         else:
             self.start_btn.setEnabled(False)
+
+    def on_report_link_clicked(self, url: QUrl):
+        path = url.url()
+        print('Open path', path)
+        paths.open_path(path)
 
     def apply_style(self):
         css_file = get_res('publish-simple/style.css')
@@ -220,15 +227,20 @@ class PublishDialog(QWidget):
             tasks[task_id] = task
             projects[task.project_id] = project
             all_roots = project.get_roots()
-            root = all_roots.get('projects')
-            new_version = inst['results']['new_version']
+            root = project.mount_root
             if not root:
                 raise ValueError(f'No root named "projects". Existing: {all_roots}')
-            text.append(f"<b>{new_version['product']['name']}</b>: v{int(new_version['version'])}")
-            for file in inst['results']['published_files']:
-                text.append(f'<br> {root}/{file["path"]}')
+            new_version = inst['results']['new_version']
+            published_files = [x['path'] for x in inst['results']['published_files']]
+            if not published_files:
+                text.append(f"<i>No published files found for {new_version['product']['name']} v{int(new_version['version'])}</i>")
+            else:
+                version_dir = Path(published_files[0]).parent.as_posix()
+                text.append(f"<b><a href=\"{root}/{version_dir}\">{new_version['product']['name']}: v{int(new_version['version'])}</a></b>")
+                for file in published_files:
+                    text.append(f'<br> {root}/{file}')
             text.append('<br><br>')
-        self.report_lb.setText(''.join(text))
+        self.report_tb.setHtml(''.join(text))
 
     def start_process(self, workfile, review_file):
         scene_file = self.build_scene(workfile, review_file)
@@ -281,16 +293,17 @@ class PublishDialog(QWidget):
 
     def on_complete(self):
         self.stackedWidget.setCurrentIndex(2)
-        self.report_lb.setText('Publishing done!')
+        self.report_tb.setText('Publishing done!')
         if self._report_file is not None:
-            return
             report_file = Path(self._report_file)
             if report_file.is_file():
                 logger.info(f'Report file: {self._report_file}')
-                self.show_report(json.loads(report_file.read_text(encoding='utf-8')))
-                if not os.getenv('AGIO_KEEP_REPORT_FILE') and os.path.exists(self._report_file):
+                report_data = json.loads(report_file.read_text(encoding='utf-8'))
+                self.show_report(report_data)
+                if not os.getenv('AGIO_KEEP_REPORT_FILE'):
                     os.remove(self._report_file)
-        # self.report_lb.setText('No reports')
+        else:
+            self.report_tb.setText('No reports')
 
     def build_scene(self, workfile, review_file, save_path: str = None):
         from agio_publish_simple.simple_scene.scene import SimplePublishScene
@@ -300,27 +313,33 @@ class PublishDialog(QWidget):
             raise Exception('Workfile or Review File is required')
 
         scene = SimplePublishScene()
+
         if workfile:
-            workfile_product = AProduct.get_or_create(self.task.entity.id, 'Workfile', 'workfile', 'main')
+            # workfile_product_type = AProductType.find('workfile')
+            # if not workfile_product_type:
+            workfile_product = AProduct.find(self.task.entity.id, 'workfile', 'main')
             if not workfile_product:
                 raise RuntimeError('Workfile product not found')
             logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
             scene.create_container('Workfile', self.task, workfile_product, workfile)
         else:
             raise Exception('Workfile is required')
+
         if review_file:
             # review
-            review_product = AProduct.get_or_create(self.task.entity.id, 'Review', 'review', 'main')
+            review_product = AProduct.find(self.task.entity.id, 'review', 'main')
             if not review_product:
                 raise RuntimeError('Review product not found')
             logger.debug('ADD Review %s %s %s', self.task, repr(review_product), review_file[0])
             scene.create_container('Review', self.task, review_product, review_file)
+
             # thumbnail
-            thumbnail_product = AProduct.get_or_create(self.task.entity.id, 'Thumbnail', 'thumbnail', 'main')
+            thumbnail_product = AProduct.find(self.task.entity.id, 'thumbnail', 'main')
             if not thumbnail_product:
                 raise RuntimeError('Thumbnail product not found')
             logger.debug('ADD Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])
             scene.create_container('Thumbnail', self.task, thumbnail_product, review_file)
+
         save_path = save_path or tempfile.mktemp(suffix='.json')
         scene.save(save_path)
         return save_path
