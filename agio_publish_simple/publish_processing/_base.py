@@ -1,16 +1,14 @@
-import os
 import shutil
 import tempfile
 from datetime import datetime
 from functools import cache, cached_property
 from pathlib import Path
 
+from agio.core.entities import profile
 from agio.core.events import emit
 from agio_pipe.exceptions import PublishError
 from agio_pipe.publish.instance import PublishInstance
 from agio_pipe.utils import path_solver
-from agio.core import settings
-from agio.core.entities import profile
 
 
 class PublishProcessingBase:
@@ -20,6 +18,7 @@ class PublishProcessingBase:
 
     def __init__(self, instance: PublishInstance, publish_options: dict|None):
         self.instance = instance
+        self.project = self.instance.project
         self.publish_options = publish_options
         self.context = None
         self.__project_settings = None
@@ -31,7 +30,7 @@ class PublishProcessingBase:
     @property
     def project_settings(self):
         if self.__project_settings is None:
-            self.__project_settings = settings.get_workspace_settings(self.instance.project.get_workspace())
+            self.__project_settings = self.project.workspace.get_settings()
         return self.__project_settings
 
     def publish(self, **options):
@@ -50,8 +49,7 @@ class PublishProcessingBase:
 
     @cache
     def get_export_templates(self):
-        ws_settings = settings.get_workspace_settings()
-        templates = ws_settings.get('agio_pipe.publish_templates')
+        templates = self.project_settings.get('agio_pipe.publish_templates')
         if templates is None:
             raise RuntimeError('No agio publish templates configured')
         templates = {tmpl.name: tmpl.pattern for tmpl in templates}
@@ -108,11 +106,15 @@ class PublishProcessingBase:
         local_settings_context = dict(
             local_roots=self.instance.project.get_roots(),
         )
+
+        # product options
+        publish_options = self.instance.project.fields.get('publish_options', {})
         full_context = {
             **instance_context,
             **host_context,
             **app_context,
             **local_settings_context,
+            **publish_options,
         }
         emit('pipe.publish.context_ready', {'context': full_context})
         return full_context

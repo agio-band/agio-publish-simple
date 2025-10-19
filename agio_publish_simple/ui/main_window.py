@@ -12,6 +12,7 @@ from PySide6.QtCore import *
 
 from agio.core import env_names
 from agio.core.pkg.resources import get_res
+from agio_pipe.entities.product_type import AProductType
 # from agio_pipe.entities import product_type
 from agio_publish_simple.ui import drop_widget
 from agio_publish_simple import __version__
@@ -305,6 +306,12 @@ class PublishDialog(QWidget):
         else:
             self.report_tb.setText('No reports')
 
+    def get_product_type_id(self, name):
+        product_type = AProductType.find(name)
+        if not product_type:
+            raise NameError(f'No product type named {name}')
+        return product_type.id
+
     def build_scene(self, workfile, review_file, save_path: str = None):
         from agio_publish_simple.simple_scene.scene import SimplePublishScene
         from agio_pipe.entities.product import AProduct
@@ -314,12 +321,21 @@ class PublishDialog(QWidget):
 
         scene = SimplePublishScene()
 
+        default_options = {
+            'publish_options': {
+                'path_template_name': 'publish'
+            }
+        }
+
         if workfile:
             # workfile_product_type = AProductType.find('workfile')
             # if not workfile_product_type:
             workfile_product = AProduct.find(self.task.entity.id, 'workfile', 'main')
             if not workfile_product:
-                raise RuntimeError('Workfile product not found')
+                workfile_product = AProduct.create(
+                    self.task.entity.id, 'workfile', self.get_product_type_id('workfile'), 'main',
+                    fields=default_options
+                )
             logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
             scene.create_container('Workfile', self.task, workfile_product, workfile)
         else:
@@ -329,15 +345,21 @@ class PublishDialog(QWidget):
             # review
             review_product = AProduct.find(self.task.entity.id, 'review', 'main')
             if not review_product:
-                raise RuntimeError('Review product not found')
+                review_product = AProduct.create(
+                    self.task.entity.id, 'review', self.get_product_type_id('review'), 'main',
+                    fields=default_options
+                )
             logger.debug('ADD Review %s %s %s', self.task, repr(review_product), review_file[0])
             scene.create_container('Review', self.task, review_product, review_file)
 
             # thumbnail
             thumbnail_product = AProduct.find(self.task.entity.id, 'thumbnail', 'main')
             if not thumbnail_product:
-                raise RuntimeError('Thumbnail product not found')
-            logger.debug('ADD Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])
+                thumbnail_product = AProduct.create(
+                    self.task.entity.id, 'thumbnail', self.get_product_type_id('thumbnail'), 'main',
+                    fields=default_options
+                )
+            logger.debug('Add Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])
             scene.create_container('Thumbnail', self.task, thumbnail_product, review_file)
 
         save_path = save_path or tempfile.mktemp(suffix='.json')

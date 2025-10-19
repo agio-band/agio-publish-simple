@@ -1,8 +1,9 @@
+from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Iterable
 
-from agio_pipe.entities.product import AProduct
+from agio_pipe.entities import product as pr
 from agio_pipe.entities.task import ATask
 from agio_pipe.exceptions import DuplicateError
 from .export_container import SimpleSceneExportContainer
@@ -45,7 +46,7 @@ class SimplePublishScene:
             self,
             name:str,
             task: ATask,
-            product: AProduct,
+            product: pr.AProduct,
             sources: list[str] = None,
             id: str = None,
         ) -> SimpleSceneExportContainer:
