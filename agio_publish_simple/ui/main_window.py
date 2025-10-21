@@ -299,7 +299,7 @@ class PublishDialog(QWidget):
             report_file = Path(self._report_file)
             if report_file.is_file():
                 logger.info(f'Report file: {self._report_file}')
-                report_data = json.loads(report_file.read_text(encoding='utf-8'))
+                report_data = json.loads(report_file.read_text())
                 self.show_report(report_data)
                 if not os.getenv('AGIO_KEEP_REPORT_FILE'):
                     os.remove(self._report_file)
@@ -330,10 +330,10 @@ class PublishDialog(QWidget):
         if workfile:
             # workfile_product_type = AProductType.find('workfile')
             # if not workfile_product_type:
-            workfile_product = AProduct.find(self.task.entity.id, 'workfile', 'main')
+            workfile_product = AProduct.find(self.task.id, 'workfile', 'main')
             if not workfile_product:
                 workfile_product = AProduct.create(
-                    self.task.entity.id, 'workfile', self.get_product_type_id('workfile'), 'main',
+                    self.task.id, 'workfile', self.get_product_type_id('workfile'), 'main',
                     fields=default_options
                 )
             logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
@@ -343,20 +343,21 @@ class PublishDialog(QWidget):
 
         if review_file:
             # review
-            review_product = AProduct.find(self.task.entity.id, 'review', 'main')
+            review_product = AProduct.find(self.task.id, 'review', 'main')
             if not review_product:
                 review_product = AProduct.create(
-                    self.task.entity.id, 'review', self.get_product_type_id('review'), 'main',
+                    # частный случай когда продукт ссылается на таск, в общем случае там может быть любой entity
+                    self.task.id, 'review', self.get_product_type_id('review'), 'main',
                     fields=default_options
                 )
             logger.debug('ADD Review %s %s %s', self.task, repr(review_product), review_file[0])
             scene.create_container('Review', self.task, review_product, review_file)
 
             # thumbnail
-            thumbnail_product = AProduct.find(self.task.entity.id, 'thumbnail', 'main')
+            thumbnail_product = AProduct.find(self.task.id, 'thumbnail', 'main')
             if not thumbnail_product:
                 thumbnail_product = AProduct.create(
-                    self.task.entity.id, 'thumbnail', self.get_product_type_id('thumbnail'), 'main',
+                    self.task.id, 'thumbnail', self.get_product_type_id('thumbnail'), 'main',
                     fields=default_options
                 )
             logger.debug('Add Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])
