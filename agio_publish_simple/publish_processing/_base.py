@@ -122,7 +122,7 @@ class PublishProcessingBase:
     def create_file_context(self, file_path: str|Path) -> dict:
         file_path = Path(file_path)
         file_context = dict(
-            file_name=file_path.stem,
+            original_file_name=file_path.stem,
             file_dirname=file_path.parent.as_posix(),
             ext=file_path.suffix.strip('.'),
             publish_filename=self.publish_filename,
