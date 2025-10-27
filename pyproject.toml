@@ -6,6 +6,7 @@ dependencies = [
     "frame-stamp==0.1.10",
     "pyside6>=6.10.0",
 ]
+license = "MIT"
 
 [tool.setuptools]
 include-package-data = true
