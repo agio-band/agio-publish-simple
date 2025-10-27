@@ -1,7 +1,7 @@
 [project]
 name = "agio-publish-simple"
-version = "0.0.3"
-requires-python = ">=3.10"
+version = "0.0.4"
+requires-python = ">=3.11"
 dependencies = [
     "frame-stamp==0.1.10",
     "pyside6>=6.10.0",
