@@ -11,7 +11,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 
 from agio.core import env_names
-from agio.core.pkg.resources import get_res
+from agio.core.workspaces.resources import get_res
 from agio_pipe.entities.product_type import AProductType
 # from agio_pipe.entities import product_type
 from agio_publish_simple.ui import drop_widget

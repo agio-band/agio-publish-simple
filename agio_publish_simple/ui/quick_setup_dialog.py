@@ -3,9 +3,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-from agio.core.pkg.resources import get_res
+from agio.core.workspaces.resources import get_res
 from agio.core.settings import get_local_settings, save_local_settings
-from agio.core.pkg import resources
+from agio.core.workspaces import resources
 from PySide6.QtWidgets import *
 from PySide6.QtGui import QIcon
 

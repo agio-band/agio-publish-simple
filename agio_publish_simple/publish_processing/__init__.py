@@ -3,7 +3,7 @@ from pathlib import Path
 
 from agio_pipe.entities import product_type as pt
 from ._base import PublishProcessingBase
-from agio.core.utils.modules_utils import import_modules_from_dir, iter_subclasses
+from agio.tools.modules import import_modules_from_dir, iter_subclasses
 
 
 def iter_publishers():

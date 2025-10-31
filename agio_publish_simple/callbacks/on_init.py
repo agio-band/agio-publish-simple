@@ -1,7 +1,7 @@
 from agio.core.events import callback, AEvent
 import logging
 from agio.core.settings import load_default_settings
-from agio.core.utils import launch_utils
+from agio.tools import launching
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ def on_app_startup(event: AEvent):
         args = [
             'simple_settings',
         ]
-        launch_utils.exec_agio_command(
+        launching.exec_agio_command(
             args=args,
             workspace=None,
             detached=False,

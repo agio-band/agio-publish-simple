@@ -2,7 +2,7 @@ import logging
 import os
 
 from agio.core.plugins.base_service import ServicePlugin, make_action
-from agio.core.utils import launch_utils
+from agio.tools import launching
 from agio_pipe.entities.task import ATask
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class SimpleLauncherService(ServicePlugin):
             '--task-id', task_id,
             '--ui',
         ]
-        launch_utils.exec_agio_command(
+        launching.exec_agio_command(
             args=cmd_args,
             workspace=task.project.workspace_id,
             detached=os.name != 'nt',   # temporary fix for windows
@@ -43,7 +43,7 @@ class SimpleLauncherService(ServicePlugin):
         args = [
             'simple_settings',
         ]
-        launch_utils.exec_agio_command(
+        launching.exec_agio_command(
             args=args,
             workspace=None,
             detached=os.name != 'nt',   # temporary fix for windows
