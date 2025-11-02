@@ -1,6 +1,5 @@
 name: agio_publish_simple
 label: agio Publish Simple
-version: 0.0.5
 description: Simple publish engine
 tags:
   - publish
@@ -11,9 +10,9 @@ urls:
   documentation: ""
   bug_tracker: "https://github.com/agio-band/agio-publish-simple/issues"
 
-agio_package_dependencies: [
-  'agio-pipe>=0.0.1',
-  'agio-desk>=0.0.1'
+required_packages: [
+  'agio-pipe>=0.0.5',
+  'agio-desk>=0.0.4'
 ]
 
 plugins:
