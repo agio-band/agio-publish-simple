@@ -30,7 +30,8 @@ class SimpleLauncherService(ServicePlugin):
         launching.exec_agio_command(
             args=cmd_args,
             workspace=task.project.workspace_id,
-            detached=os.name != 'nt',   # temporary fix for windows
+            detached=os.name != 'nt',   # fix for windows
+            non_blocking=os.name == 'nt',
             new_console=True
         )
 
@@ -46,6 +47,7 @@ class SimpleLauncherService(ServicePlugin):
         launching.exec_agio_command(
             args=args,
             workspace=None,
-            detached=os.name != 'nt',   # temporary fix for windows
+            detached=os.name != 'nt',   # fix for windows
+            non_blocking=os.name == 'nt',
             new_console=False
         )
