@@ -10,14 +10,13 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 
-from agio.core import env_names
 from agio.core.workspaces.resources import get_res
 from agio_pipe.entities.product_type import AProductType
 # from agio_pipe.entities import product_type
 from agio_publish_simple.ui import drop_widget
 from agio_publish_simple import __version__
 from agio_pipe.entities.task import ATask
-from agio.tools import paths
+from agio.tools import paths, env_names
 
 # 🗂️ 📦 📌
 title1 = '''
@@ -266,7 +265,7 @@ class PublishDialog(QWidget):
         for k, v in os.environ.items():
             if k.startswith('AGIO_'):
                 env.insert(k, v)
-        env.insert(env_names.WORKSPACE_ENV_NAME, self.get_workspace_id())
+        env.insert(env_names.WORKSPACE_ID, self.get_workspace_id())
         self.process.setProcessEnvironment(env)
         self.output_tb.append('CMD: ' + ' '.join(cmd))
         self.process.start(cmd[0], cmd[1:])
