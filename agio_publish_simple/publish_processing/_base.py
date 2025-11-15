@@ -30,7 +30,7 @@ class PublishProcessingBase:
     @property
     def project_settings(self):
         if self.__project_settings is None:
-            self.__project_settings = self.project.workspace.get_settings()
+            self.__project_settings = self.project.get_settings()
         return self.__project_settings
 
     def publish(self, **options):
