@@ -19,7 +19,7 @@ class SimpleLauncherService(ServicePlugin):
         task = ATask(task_id)
         logger.info(f'Start standalone publisher with task {task.entity.name}/{task.name}')
 
-        if not task.project.workspace_id:
+        if not task.project.workspace_launching_id:
             raise ValueError(f'Workspace not set for project "{task.project.name}"')
         cmd_args = [
             'pub',
@@ -29,7 +29,7 @@ class SimpleLauncherService(ServicePlugin):
         ]
         launching.exec_agio_command(
             args=cmd_args,
-            workspace=task.project.workspace_id,
+            workspace=task.project.workspace_launching_id,
             detached=os.name != 'nt',   # fix for windows
             non_blocking=os.name == 'nt',
             new_console=True
