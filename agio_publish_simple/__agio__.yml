@@ -12,7 +12,7 @@ urls:
 
 required_packages: [
   'agio_pipe>=0.0.10',
-  'agio_desk>=0.0.9'
+  'agio_desk>=0.0.10'
 ]
 
 plugins:
@@ -25,10 +25,3 @@ plugins:
     implementations:
         - module: plugins/services/launcher_service.py
 
-  - label: Quick Simple Settings Dialog
-    implementations:
-      - module: plugins/commands/settings_command.py
-
-
-callbacks:
-  - callbacks/on_init.py
