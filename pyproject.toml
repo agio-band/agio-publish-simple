@@ -1,9 +1,9 @@
 [project]
 name = "agio-publish-simple"
-version = "0.0.11"
+version = "0.0.12"
 requires-python = ">=3.11"
 dependencies = [
-    "frame-stamp==0.1.10",
+    "frame-stamp>=0.1.12",
     "pyside6>=6.10.0",
 ]
 license = "MIT"

@@ -161,12 +161,6 @@ class PublishDialog(QWidget):
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.open_scene)
         QShortcut(QKeySequence("Ctrl+R"), self, activated=self.on_reset)
 
-    def get_workspace_id(self):
-        ws =  self.task.project.get_workspace()
-        if not ws:
-            raise Exception(f'No workspace found for project, {self.task.project.name}')
-        return ws.id
-
     def on_source_changed(self):
         if self.drop_wd_1.get_source():
             self.start_btn.setEnabled(True)
@@ -265,7 +259,10 @@ class PublishDialog(QWidget):
         for k, v in os.environ.items():
             if k.startswith('AGIO_'):
                 env.insert(k, v)
-        env.insert(env_names.WORKSPACE_ID, self.get_workspace_id())
+        launching_workspace_id = self.task.project.workspace_launching_id
+        if not launching_workspace_id:
+            raise RuntimeError(f'No workspace or revision ID for project {self.task.project.name}')
+        env.insert(env_names.WORKSPACE_ID, launching_workspace_id)
         self.process.setProcessEnvironment(env)
         self.output_tb.append('CMD: ' + ' '.join(cmd))
         self.process.start(cmd[0], cmd[1:])
