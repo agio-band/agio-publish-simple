@@ -1,14 +1,14 @@
 import subprocess
 from pathlib import Path
 import pyseq
+from agio_ffmpeg import tools as fftools
+
+
+COLOR_MATRIX_NAME_MAP = {'rec709': 'bt709'}
 
 
 def get_ffmpeg_executable() -> str:
-    return 'ffmpeg'
-
-COLOR_MATRIX_NAME_MAP = {
-    'rec709': 'bt709'
-}
+    return fftools.get_ffmpeg_tool('ffmpeg')
 
 
 def sequence_to_video(sequence: list[str], output_dir: Path, fps: int, in_color='rec709', crf=18):
