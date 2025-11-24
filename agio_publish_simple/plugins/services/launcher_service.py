@@ -11,9 +11,6 @@ logger = logging.getLogger(__name__)
 class SimpleLauncherService(ServicePlugin):
     name = 'simple_publish'
 
-    def execute(self, **kwargs):
-        pass
-
     @make_action(menu_name='task.launcher', app_name='front')
     def open_publisher_dialog(self, *args, task_id: str, **kwargs):
         task = ATask(task_id)
@@ -32,22 +29,7 @@ class SimpleLauncherService(ServicePlugin):
             workspace=task.project.workspace_launching_id,
             detached=os.name != 'nt',   # fix for windows
             non_blocking=os.name == 'nt',
-            new_console=True
+            new_console=True,
         )
 
 
-    @make_action(label='Settings',
-                 menu_name='tray.main_menu',
-                 app_name='desk',
-                 )
-    def simple_settings(self, *args, **kwargs):
-        args = [
-            'simple_settings',
-        ]
-        launching.exec_agio_command(
-            args=args,
-            workspace=None,
-            detached=os.name != 'nt',   # fix for windows
-            non_blocking=os.name == 'nt',
-            new_console=False
-        )
