@@ -8,7 +8,7 @@ from agio.core.entities import profile
 from agio.core.events import emit
 from agio_pipe.exceptions import PublishError
 from agio_pipe.publish.instance import PublishInstance
-from agio_pipe.utils import path_solver
+from agio_pipe.utils import template_solver
 
 
 class PublishProcessingBase:
@@ -59,7 +59,7 @@ class PublishProcessingBase:
         templates = self.get_export_templates()
         context = self.context.copy()
         context.update(self.create_file_context(orig_file))
-        solver = path_solver.TemplateSolver(templates)
+        solver = template_solver.TemplateSolver(templates)
         emit('pipe.publish.save_file_context_ready', {'context': context, 'template_name': self.template_name})
         full_path = solver.solve(self.template_name, context)
         company_root = Path(context['project'].get_roots()['projects']).joinpath(context['company'].code)   # TODO
