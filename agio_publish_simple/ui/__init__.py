@@ -1,14 +1,12 @@
-from PySide6.QtWidgets import QApplication
-
 from agio.tools import qt
+from agio_pipe.chips.publish_scene import default_standalone_scene as scene
 from agio_pipe.entities.task import ATask
-from agio_publish_simple.simple_scene import scene as simple_scene
 from agio_publish_simple.ui import main_window
-from agio.tools.qt import open_widget
 
 
 def load_containers(scene_file, selected_instances: tuple[str] = None):
-    scene_plugin = simple_scene.SimplePublishScene(scene_file)
+    scene_plugin = scene.StandalonePublishScene()
+    scene_plugin.load(scene_file)
     containers = scene_plugin.get_containers()
     if selected_instances:
         containers = [con for con in containers if con.name in selected_instances]
@@ -33,9 +31,9 @@ def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, tas
         )
         for cont in containers:
             product_type = cont.get_product().type
-            if product_type == 'workfile':
+            if product_type.name == 'workfile':
                 dialog.set_workfile(cont.get_sources())
-            elif product_type == 'review':
+            elif product_type.name == 'review':
                 dialog.set_review(cont.get_sources())
         qt.center_on_screen(dialog)
         dialog.show()

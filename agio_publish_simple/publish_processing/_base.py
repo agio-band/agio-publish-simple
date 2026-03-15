@@ -1,3 +1,4 @@
+import logging
 import shutil
 import tempfile
 from datetime import datetime
@@ -8,12 +9,15 @@ from agio.core.entities import profile
 from agio.core.events import emit
 from agio_pipe.exceptions import PublishError
 from agio_pipe.publish.instance import PublishInstance
+from agio_pipe.schemas.version import PublishedFileFull
 from agio_pipe.utils import template_solver
+
+logger = logging.getLogger(__name__)
 
 
 class PublishProcessingBase:
     product_type = None
-    template_name = 'publish'
+    default_path_template_name = 'default'
     publish_filename = 'not-set'
 
     def __init__(self, instance: PublishInstance, publish_options: dict|None):
@@ -33,14 +37,13 @@ class PublishProcessingBase:
             self.__project_settings = self.project.get_settings()
         return self.__project_settings
 
-    def publish(self, **options):
+    def publish(self, **options) -> list[PublishedFileFull]:
         if not self.instance.sources:
             raise PublishError(detail=f'No sources files in instance {self.instance}')
         self.context = self.collect_context()
-        result = self.execute(**options)
-        return result
+        return self.execute(**options)
 
-    def execute(self, **options):
+    def execute(self, **options) -> list[PublishedFileFull]:
         raise NotImplementedError()
 
     @cached_property
@@ -48,30 +51,36 @@ class PublishProcessingBase:
         return Path(tempfile.mkdtemp())
 
     @cache
-    def get_export_templates(self):
+    def get_export_templates(self) -> dict:
         templates = self.project_settings.get('agio_pipe.publish_templates')
         if templates is None:
             raise RuntimeError('No agio publish templates configured')
-        templates = {tmpl.name: tmpl.pattern for tmpl in templates}
+        templates = {tmpl.name: tmpl for tmpl in templates}
         return templates
 
-    def get_save_path(self, orig_file: str|Path) -> [str, str]:
+    def get_save_path(self, orig_file: str|Path, **options) -> tuple[str, str]:
         templates = self.get_export_templates()
+        template_name = options.get('path_template_name') or self.default_path_template_name
+        if template_name not in templates:
+            raise NameError(f'Path template name "{template_name}" not in templates: {templates.keys()!r}')
         context = self.context.copy()
         context.update(self.create_file_context(orig_file))
-        solver = template_solver.TemplateSolver(templates)
-        emit('pipe.publish.save_file_context_ready', {'context': context, 'template_name': self.template_name})
-        full_path = solver.solve(self.template_name, context)
-        company_root = Path(context['project'].get_roots()['projects']).joinpath(context['company'].code)   # TODO
-        relative_path = Path(full_path).relative_to(company_root)
-        self.context['current_template_name'] = self.template_name
-        self.context['current_template'] = templates[self.template_name]
+        solver = template_solver.TemplateSolver({k: v.path for k, v in templates.items()})
+        context.update(templates[template_name].variables or {})
+
+        emit('pipe.publish.save_file_context_ready', {'context': context, 'template_name': template_name})
+
+        relative_path = solver.solve(template_name, context)
+        full_path = self.instance.project.company_root / relative_path
+        self.context['current_template_name'] = template_name
+        self.context['current_template'] = templates[template_name].path
         self.context['templates'] = templates
-        emit('pipe.publish.save_path_ready', {'full_path': full_path, 'relative_path': relative_path.as_posix()})
         self.context['save_path'] = full_path
-        self.context['save_path_relative'] = relative_path.as_posix()
-        emit('pipe.publish.file_context_ready', {'context': self.context, 'template_name': self.template_name})
-        return full_path, relative_path.as_posix()
+        self.context['save_path_relative'] = str(relative_path)
+
+        emit('pipe.publish.file_context_ready', {'context': self.context, 'template_name': template_name})
+
+        return str(full_path), str(relative_path)
 
     def collect_context(self):
         # from instance
@@ -83,6 +92,7 @@ class PublishProcessingBase:
             task=self.instance.task,
             entity=self.instance.task.entity,
             product=self.instance.product,
+            product_type=self.instance.product.type,
             variant=self.instance.product.variant,
             version=self.instance.version
         )
@@ -98,7 +108,7 @@ class PublishProcessingBase:
         from agio_publish_simple import __version__
 
         app_context = dict(
-            app_name='agio-publish-simple',
+            app_name='agio_publish_simple',
             app_version=__version__
         )
 
@@ -133,4 +143,4 @@ class PublishProcessingBase:
         if not self.is_no_file_mode:
             dist_path = Path(dst_path)
             dist_path.parent.mkdir(parents=True, exist_ok=True)
-            return shutil.copy(src_path, dist_path)
+            shutil.copy(src_path, dist_path)

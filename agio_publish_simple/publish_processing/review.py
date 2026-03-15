@@ -19,7 +19,7 @@ class PublishProcessingReview(PublishProcessingBase):
     product_type = "review"
     publish_filename = "review"
 
-    def execute(self, **options):
+    def execute(self, **options) -> list[PublishedFileFull]:
         # get one single file and publish to project
         if self.is_no_file_mode:    # use original video file without processing
             # no file mode
@@ -29,31 +29,39 @@ class PublishProcessingReview(PublishProcessingBase):
             if not self.is_video_file(review_file) and not self.is_image_file(review_file):
                 raise PublishError(f'Review only supports video and image files: {review_file}')
         else:
-            review_file = self.make_review_output(self.instance.sources)
+            review_file = self.make_review_output(self.instance.sources, **options)
             orig_file = None
         full_path, rel_path = self.get_save_path(review_file)
         logger.info('Review save path %s', rel_path)
         self.copy_file_to(review_file, full_path)
         file = PublishedFileFull(
             orig_path=orig_file,
-            path=full_path,
-            relative_path=rel_path,
+            publish_path=rel_path,
         )
         return [file]
 
-    def make_review_output(self, source_files) -> str:
+    def make_review_output(self, source_files, **options) -> str:
+        logger.info('Review options: %s', options)
         # extract to images
         seq = self.extract_sequence(source_files)
         # burn in template
-        burned_seq = self.process_burn_in(seq)
+        burned_seq = self.process_burn_in(seq, **options)
         # compile to video
         video_file = self.compile_to_video(burned_seq)
         return video_file
 
-    def get_burn_in_template(self):
-        return json.loads(self.project_settings.get('agio_pipe.review_template'))
+    def get_burn_in_template(self, **options):
+        logger.info(f'Publish Options {options}')
+        template_name = options.get('burn_in_template_name')
+        if not template_name:
+            raise PublishError('Burn-in template name is required')
+        templates = self.project_settings.get('agio_pipe.review_templates')
+        for template_data in templates:
+            if template_data.name == template_name:
+                return template_data.template
+        raise PublishError(detail=f'Burn-in template {template_name} not found')
 
-    def process_burn_in(self, sequence):
+    def process_burn_in(self, sequence, **options):
         if not self.project_settings.get('agio_pipe.apply_burn_in'):
             return sequence
 
@@ -61,7 +69,8 @@ class PublishProcessingReview(PublishProcessingBase):
         seq = pyseq.Sequence(sorted(sequence))
         output_dir = self.tempdir/'burn-in'
         output_dir.mkdir(parents=True, exist_ok=True)
-        template = self.get_burn_in_template()
+        template = self.get_burn_in_template(**options)
+        logger.info('Selected template: %s', template)
         for i, img in enumerate(seq):
             variables = {
                 **self.context,

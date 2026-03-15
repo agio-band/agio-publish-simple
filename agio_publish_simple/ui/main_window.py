@@ -1,22 +1,25 @@
 import json
 import logging
 import os
-import sys
 import tempfile
 import traceback
 from pathlib import Path
 
+from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
-from PySide6.QtCore import *
 
+from agio.core.workspaces import AWorkspaceManager
 from agio.core.workspaces.resources import get_res
+from agio.tools import paths
+from agio.tools.launching import create_workspace_launch_context, LaunchContext
+from agio_pipe.chips.publish_scene.default_standalone_scene import StandalonePublishScene
+from agio_pipe.chips.publish_scene.export_container import ExportContainer
+from agio_pipe.entities.product import AProduct
 from agio_pipe.entities.product_type import AProductType
-# from agio_pipe.entities import product_type
-from agio_publish_simple.ui import drop_widget
-from agio_publish_simple import __version__
 from agio_pipe.entities.task import ATask
-from agio.tools import paths, env_names
+from agio_publish_simple import __version__
+from agio_publish_simple.ui import drop_widget
 
 # 🗂️ 📦 📌
 title1 = '''
@@ -238,34 +241,36 @@ class PublishDialog(QWidget):
 
     def start_process(self, workfile, review_file):
         scene_file = self.build_scene(workfile, review_file)
-        self._report_file = tempfile.mktemp(suffix='.json')
-        cmd = [
-            sys.executable, '-m', 'agio',   # TODO use core func to get args
-            'pub',
-            scene_file,
-            '-o', self._report_file
-        ]
-        self.output_tb.append(' '.join(cmd))
-        self.start_subprocess(cmd)
+        self._report_file = tempfile.NamedTemporaryFile(suffix='.json', delete=False).name
 
-    def start_subprocess(self, cmd):
+        ws_manager = AWorkspaceManager.current()
+        ctx = create_workspace_launch_context(
+            ws_manager=ws_manager,
+            args=['-m', 'agio',
+                  '-w', ws_manager.revision_id,
+                  'pub',
+                  scene_file,
+                  '-o', self._report_file
+                  ]
+        )
+        self.output_tb.append(' '.join(ctx.command))
+        self.start_subprocess(ctx)
+
+    def start_subprocess(self, ctx: LaunchContext, **kwargs):
         self.stackedWidget.setCurrentIndex(1)
         self.output_tb.append('Start Publishing')
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self.handle_stdout)
         self.process.readyReadStandardError.connect(self.handle_stderr)
         self.process.finished.connect(self.process_done)
+
         env = QProcessEnvironment.systemEnvironment()
-        for k, v in os.environ.items():
-            if k.startswith('AGIO_'):
-                env.insert(k, v)
-        launching_workspace_id = self.task.project.workspace_launching_id
-        if not launching_workspace_id:
-            raise RuntimeError(f'No workspace or revision ID for project {self.task.project.name}')
-        env.insert(env_names.WORKSPACE_ID, launching_workspace_id)
+        for k, v in ctx.envs.items():
+            env.insert(k, v)
         self.process.setProcessEnvironment(env)
-        self.output_tb.append('CMD: ' + ' '.join(cmd))
-        self.process.start(cmd[0], cmd[1:])
+        self.process.setWorkingDirectory(ctx.workdir)
+        self.output_tb.append('CMD: ' + ' '.join(ctx.command))
+        self.process.start(ctx.command[0], ctx.command[1:])
 
     def handle_stdout(self):
         data = self.process.readAllStandardOutput()
@@ -295,12 +300,13 @@ class PublishDialog(QWidget):
             report_file = Path(self._report_file)
             if report_file.is_file():
                 logger.info(f'Report file: {self._report_file}')
-                report_data = json.loads(report_file.read_text())
-                self.show_report(report_data)
+                try:
+                    report_data = json.loads(report_file.read_text())
+                    self.show_report(report_data)
+                except json.JSONDecodeError:
+                    logger.warning(f'Report file is not valid {report_file}')
                 if not os.getenv('AGIO_KEEP_REPORT_FILE'):
                     os.remove(self._report_file)
-        else:
-            self.report_tb.setText('No reports')
 
     def get_product_type_id(self, name):
         product_type = AProductType.find(name)
@@ -309,13 +315,8 @@ class PublishDialog(QWidget):
         return product_type.id
 
     def build_scene(self, workfile, review_file, save_path: str = None):
-        from agio_publish_simple.simple_scene.scene import SimplePublishScene
-        from agio_pipe.entities.product import AProduct
-
-        if not any([workfile, review_file]):
-            raise Exception('Workfile or Review File is required')
-
-        scene = SimplePublishScene()
+        # TODO use only existing products! error if missing
+        scene = StandalonePublishScene()
 
         default_options = {
             'publish_options': {
@@ -323,43 +324,52 @@ class PublishDialog(QWidget):
             }
         }
 
-        if workfile:
-            # workfile_product_type = AProductType.find('workfile')
-            # if not workfile_product_type:
-            workfile_product = AProduct.find(self.task.id, 'workfile', 'main')
-            if not workfile_product:
-                workfile_product = AProduct.create(
-                    self.task.id, 'workfile', self.get_product_type_id('workfile'), 'main',
-                    fields=default_options
-                )
-            logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
-            scene.create_container('Workfile', self.task, workfile_product, workfile)
-        else:
-            raise Exception('Workfile is required')
+        workfile_product = AProduct.find(self.task.id, 'workfile', 'main')
+        if not workfile_product:
+            # required options fields:
+            # - path_template_name
+            workfile_product = AProduct.create(
+                self.task.id, 'workfile', self.get_product_type_id('workfile'), 'main',
+                fields=default_options
+            )
+        logger.debug('ADD Workfile %s %s %s', self.task, repr(workfile_product), workfile[0])
+        scene.create_container('Workfile', self.task, workfile_product, workfile)
 
         if review_file:
             # review
+            # required options fields:
+            # - path_template_name
+            # - burn_in_template_name
             review_product = AProduct.find(self.task.id, 'review', 'main')
             if not review_product:
                 review_product = AProduct.create(
                     # частный случай когда продукт ссылается на таск, в общем случае там может быть любой entity
                     self.task.id, 'review', self.get_product_type_id('review'), 'main',
-                    fields=default_options
+                    fields={
+                        **default_options,
+                        'burn_in_template_name': 'default'
+                    }
                 )
+            opt = review_product.fields.get('publish_options') or {}
+            if 'burn_in_template_name' not in opt:
+                opt['burn_in_template_name'] = 'default'
+                review_product.set_fields(publish_options=opt)
             logger.debug('ADD Review %s %s %s', self.task, repr(review_product), review_file[0])
             scene.create_container('Review', self.task, review_product, review_file)
 
             # thumbnail
             thumbnail_product = AProduct.find(self.task.id, 'thumbnail', 'main')
             if not thumbnail_product:
+                # required options fields:
+                # - path_template_name
                 thumbnail_product = AProduct.create(
                     self.task.id, 'thumbnail', self.get_product_type_id('thumbnail'), 'main',
                     fields=default_options
                 )
             logger.debug('Add Thumbnail %s %s %s', self.task, repr(thumbnail_product), review_file[0])
             scene.create_container('Thumbnail', self.task, thumbnail_product, review_file)
-
-        save_path = save_path or tempfile.mktemp(suffix='.json')
+        if not save_path:
+            save_path = tempfile.NamedTemporaryFile(delete=False, suffix='.json').name
         scene.save(save_path)
         return save_path
 
@@ -385,9 +395,6 @@ class PublishDialog(QWidget):
                 QMessageBox.critical(self, ' Error', str(e))
 
     def open_scene(self):
-        from agio_publish_simple.simple_scene.scene import SimplePublishScene
-        from agio_publish_simple.simple_scene.export_container import SimpleSceneExportContainer
-
         dialog = QFileDialog()
         dialog.setNameFilter("*.json")
         dialog.setFileMode(QFileDialog.AnyFile)
@@ -396,12 +403,13 @@ class PublishDialog(QWidget):
             if not files:
                 return
             try:
-                scene = SimplePublishScene(files[0])
+                scene = StandalonePublishScene()
+                scene.load(files[0])
                 for cont in scene.containers.values():
-                    cont: SimpleSceneExportContainer
-                    if cont.get_product().type == 'workfile':
+                    cont: ExportContainer
+                    if cont.get_product().type.name == 'workfile':
                         self.set_workfile(cont.get_sources())
-                    elif cont.get_product().type == 'review':
+                    elif cont.get_product().type.name == 'review':
                         self.set_review(cont.get_sources())
             except Exception as e:
                 traceback.print_exc()
@@ -441,4 +449,3 @@ class Line(QFrame):
         super().__init__(parent)
         self.setFrameShape(QFrame.Shape.HLine)
         self.setFrameShadow(QFrame.Shadow.Sunken)
-# start_file

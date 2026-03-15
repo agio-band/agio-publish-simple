@@ -1,9 +1,13 @@
+import logging
 import tempfile
 
+from PIL import Image
+
+from agio_pipe.exceptions import PublishError
 from agio_pipe.schemas.version import PublishedFileFull
 from agio_publish_simple.publish_processing.review import PublishProcessingReview
-from agio_pipe.exceptions import PublishError
-from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 class PublishProcessThumbnail(PublishProcessingReview):
@@ -24,8 +28,7 @@ class PublishProcessThumbnail(PublishProcessingReview):
         self.copy_file_to(thumbnail_file, full_path)
         file = PublishedFileFull(
             orig_path=thumbnail_file,
-            path=full_path,
-            relative_path=rel_path,
+            publish_path=full_path,
         )
         return [file]
 

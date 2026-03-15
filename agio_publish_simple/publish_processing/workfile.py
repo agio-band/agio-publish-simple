@@ -18,12 +18,13 @@ class PublishProcessingWorkfile(PublishProcessingBase):
             raise PublishError(detail=f'Multiple sources files in instance not allowed {self.instance.sources}')
         # get one single file and publish to project
         work_file = self.instance.sources[0]
-        full_path, rel_path = self.get_save_path(work_file)
+        options = self.instance.options
+        logger.info('Instance Options: %s', options)
+        full_path, rel_path = self.get_save_path(work_file, template_name='default', **options)
         logger.info('Workfile save path %s', rel_path)
         self.copy_file_to(work_file, full_path)
         file = PublishedFileFull(
             orig_path=work_file,
-            path=full_path,
-            relative_path=rel_path,
+            publish_path=full_path,
         )
         return [file]
