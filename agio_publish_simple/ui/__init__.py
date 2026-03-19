@@ -14,7 +14,9 @@ def load_containers(scene_file, selected_instances: tuple[str] = None):
 
 
 def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, task_id: str = None) -> None:
-    containers = load_containers(scene_file, selected_instances)
+    containers = None
+    if scene_file is not None:
+        containers = load_containers(scene_file, selected_instances)
     task = None
     if task_id:
         task = ATask(task_id)
@@ -29,15 +31,17 @@ def show_dialog(scene_file: str = None, selected_instances: tuple[str]=None, tas
             workfile_extensions=['.mb', '.ma', '.hip', '.psd', '.max', '.blend', '.ae'],
             review_extensions=['.png', '.jpg', '.mp4', '.mov', '.avi']
         )
-        for cont in containers:
-            product_type = cont.get_product().type
-            if product_type.name == 'workfile':
-                dialog.set_workfile(cont.get_sources())
-            elif product_type.name == 'review':
-                dialog.set_review(cont.get_sources())
+        if containers:
+            for cont in containers:
+                product_type = cont.get_product().type
+                if product_type.name == 'workfile':
+                    dialog.set_workfile(cont.get_sources())
+                elif product_type.name == 'review':
+                    dialog.set_review(cont.get_sources())
         qt.center_on_screen(dialog)
         dialog.show()
         dialog.activateWindow()
+
 
 
 
