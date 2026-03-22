@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class SimpleLauncherService(ServicePlugin):
-    name = 'simple_publish'
+    name = 'simple_publish_service'
 
     @make_action(menu_name='task.launcher', app_name='front')
     def open_publisher_dialog(self, *args, task_id: str, **kwargs):
