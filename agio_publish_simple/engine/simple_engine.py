@@ -77,3 +77,4 @@ class SimplePublishEngine:
                 'version': vers,
                 'instance': inst,
             })
+            logger.info('New version: {}'.format(vers))

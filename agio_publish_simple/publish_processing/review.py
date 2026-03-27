@@ -109,7 +109,7 @@ class PublishProcessingReview(PublishProcessingBase):
                 else:
                     rng = range(fps)
                 for i in rng:
-                    save_path = output_dir / f'{orig_file.stem}{i:05d}{orig_file.suffix}'
+                    save_path = output_dir / f'{orig_file.stem}__{i:05d}{orig_file.suffix}'
                     sequence.append(shutil.copy(orig_file, save_path))
                 return sequence
         else:

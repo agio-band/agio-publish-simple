@@ -104,7 +104,7 @@ class PublishDialog(QWidget):
         self.title2 = QLabel(title2)
 
         self.main_ly_2.addWidget(self.title2)
-        self.output_tb = Output(self.page_2)
+        self.output_tb = OutputWidget(self.page_2)
         self.main_ly_2.addWidget(self.output_tb)
         self.horizontalLayout = QHBoxLayout()
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
@@ -124,7 +124,7 @@ class PublishDialog(QWidget):
         self.main_ly_3.addWidget(self.line_3)
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
-        self.report_tb = QTextBrowser()
+        self.report_tb = OutputWidget()
         scroll.setWidget(self.report_tb)
         self.report_tb.setOpenExternalLinks(False)
         self.report_tb.setOpenLinks(False)
@@ -416,7 +416,7 @@ class PublishDialog(QWidget):
                 QMessageBox.critical(self, ' Error', str(e))
 
 
-class Output(QTextBrowser):
+class OutputWidget(QTextBrowser):
 
     def __init__(self, parent=None):
         super().__init__(parent)
