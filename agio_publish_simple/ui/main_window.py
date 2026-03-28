@@ -1,6 +1,7 @@
-import json
 import logging
 import os
+import re
+import sys
 import tempfile
 import traceback
 from pathlib import Path
@@ -9,6 +10,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
+import requests
 from agio.core.workspaces import AWorkspaceManager
 from agio.core.workspaces.resources import get_res
 from agio.tools import paths
@@ -153,8 +155,8 @@ class PublishDialog(QWidget):
         self.stackedWidget.setCurrentIndex(0)
         self.apply_style()
         self.on_source_changed()
-        self._report_file = None
         self.process = None
+        self.session_id = None
 
         # debug shortcuts
         QShortcut(QKeySequence("Alt+1"), self, activated=lambda: self.stackedWidget.setCurrentIndex(0))
@@ -241,7 +243,6 @@ class PublishDialog(QWidget):
 
     def start_process(self, workfile, review_file):
         scene_file = self.build_scene(workfile, review_file)
-        self._report_file = tempfile.NamedTemporaryFile(suffix='.json', delete=False).name
 
         ws_manager = AWorkspaceManager.current()
         ctx = create_workspace_launch_context(
@@ -250,43 +251,49 @@ class PublishDialog(QWidget):
                   '-w', ws_manager.revision_id,
                   'pub',
                   scene_file,
-                  '-o', self._report_file
                   ]
         )
-        self.output_tb.append(' '.join(ctx.command))
         self.start_subprocess(ctx)
 
     def start_subprocess(self, ctx: LaunchContext, **kwargs):
         self.stackedWidget.setCurrentIndex(1)
-        self.output_tb.append('Start Publishing')
         self.process = QProcess(self)
+        self.process.setProcessChannelMode(QProcess.MergedChannels)
         self.process.readyReadStandardOutput.connect(self.handle_stdout)
         self.process.readyReadStandardError.connect(self.handle_stderr)
         self.process.finished.connect(self.process_done)
-
         env = QProcessEnvironment.systemEnvironment()
         for k, v in ctx.envs.items():
             env.insert(k, v)
         self.process.setProcessEnvironment(env)
         self.process.setWorkingDirectory(ctx.workdir)
-        self.output_tb.append('CMD: ' + ' '.join(ctx.command))
+        self.output_tb.append('Exec command: ' + ' '.join(ctx.command))
+        if ctx.workdir:
+            self.output_tb.append(f'Workdir: {ctx.workdir}')
+        self.process.errorOccurred.connect(lambda e: logger.error(f"Subprocess error {e}: {self.process.errorString()}"))
         self.process.start(ctx.command[0], ctx.command[1:])
+        resp = self.process.waitForStarted()
+        if not resp:
+            logger.error(f"Failed to start: {self.process.errorString()}")
+        else:
+            logger.debug(f"Started: {self.process.state()}")
 
     def handle_stdout(self):
-        data = self.process.readAllStandardOutput()
-        text = bytes(data).decode(self.output_encoding, errors="replace")
-        print(text.strip())
-        self.output_tb.append(text)
+        data = self.process.readAllStandardOutput().data().decode('utf-8', errors='replace')
+        sys.stdout.write(data)
+        sys.stdout.flush()
+        self.output_tb.append(data)
+        self._parse_output(data)
 
     def handle_stderr(self):
-        data = self.process.readAllStandardError()
-        text = bytes(data).decode(self.output_encoding, errors="replace")
-        print(text.strip())
-        self.output_tb.append_error(text.strip().replace('\n', '<br>').replace(' ', '&nbsp;'))
+        data = self.process.readAllStandardError().data().decode('utf-8', errors='replace')
+        sys.stderr.write(data)
+        sys.stderr.flush()
+        self.output_tb.append_error(data.strip().replace('\n', '<br>').replace(' ', '&nbsp;'))
 
     def process_done(self, exit_code, exit_status):
         print('Exit code:', exit_code)
-        self.output_tb.append_error(f'Exit code: {exit_code}')
+        self.output_tb.append(f'Exit code: {exit_code}')
         if exit_code == 0:
             self.on_complete()
 
@@ -295,18 +302,22 @@ class PublishDialog(QWidget):
 
     def on_complete(self):
         self.stackedWidget.setCurrentIndex(2)
-        self.report_tb.setText('Publishing done!')
-        if self._report_file is not None:
-            report_file = Path(self._report_file)
-            if report_file.is_file():
-                logger.info(f'Report file: {self._report_file}')
-                try:
-                    report_data = json.loads(report_file.read_text())
-                    self.show_report(report_data)
-                except json.JSONDecodeError:
-                    logger.warning(f'Report file is not valid {report_file}')
-                if not os.getenv('AGIO_KEEP_REPORT_FILE'):
-                    os.remove(self._report_file)
+        if self.session_id:
+            self.display_report(self.session_id)
+        else:
+            self.report_tb.setText('Publishing done!')
+
+    def display_report(self, session_id):
+        from agio_pipe.publish import publish_session
+        session = publish_session.PublishSession(session_id=session_id)
+        self.report_tb.append_success(f'Publishing session: {session.id}')
+        for inst_id, inst in session.instances.items():
+            self.report_tb.append(str(inst.name))
+
+    def _parse_output(self, text: str):
+        m = re.search(r'Publish Session ID: "([\w\-]+)"', text)
+        if m:
+            self.session_id = m.group(1)
 
     def get_product_type_id(self, name):
         product_type = AProductType.find(name)
@@ -320,7 +331,7 @@ class PublishDialog(QWidget):
 
         default_options = {
             'publish_options': {
-                'path_template_name': 'publish'
+                'path_template_name': 'publish' # TODO get from settings
             }
         }
 
@@ -417,31 +428,48 @@ class PublishDialog(QWidget):
 
 
 class OutputWidget(QTextBrowser):
-
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._set_monospace_font()
+
         self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
         self.setOpenLinks(False)
         self.anchorClicked.connect(self.on_link_clicked)
 
+    def _set_monospace_font(self):
+        self.document().setDefaultStyleSheet("p, div { margin: 0px; padding: 0px; }")
+        font = QFont("Consolas")
+        font.setStyleHint(QFont.StyleHint.Monospace)
+        font.setFixedPitch(True)
+        self.setFont(font)
+        self.document().setDefaultFont(font)
+
     def _format_html(self, text):
-        return str(text)
+        return text.strip().replace('\n', '<br>')
 
     def append_error(self, text):
-        self.append(
-            f"<span style='color:orange'>{self._format_html(text)}</span>"
-        )
+        if text.strip():
+            super().append(f"<span style='color:orange'>{self._format_html(text)}</span>")
 
     def append_success(self, text):
-        self.append(
-            f"<span style='color:green'>{self._format_html(text.strip())}</span>"
-        )
+        if text.strip():
+            super().append(f"<span style='color:green; font-weight:bold;'>{self._format_html(text)}</span>")
 
     def append(self, text):
-        super().append(self._format_html(text.strip()))
+        if text.strip():
+            super().append(f"<span>{self._format_html(text)}</span>")
 
-    def on_link_clicked(self, link):
-        print(link)
+    def on_link_clicked(self, url: QUrl):
+        link_str = url.toString()
+        if url.scheme() in ["http", "https"]:
+            QDesktopServices.openUrl(url)
+        else:
+            path = url.toLocalFile() if url.isLocalFile() else link_str
+            if os.path.exists(path):
+                folder = path if os.path.isdir(path) else os.path.dirname(path)
+                QDesktopServices.openUrl(QUrl.fromLocalFile(folder))
+            else:
+                QDesktopServices.openUrl(url)
 
 
 class Line(QFrame):
