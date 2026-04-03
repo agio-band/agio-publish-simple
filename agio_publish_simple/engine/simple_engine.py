@@ -1,7 +1,7 @@
 import logging
 
 from agio.core.events import emit
-from agio_pipe.entities.version import AVersion
+from agio.core.entities.version import AVersion
 from agio_pipe.publish.instance import PublishInstance
 from agio_pipe.publish.publish_session import PublishSession
 from agio_pipe.publish.tools.create_version import create_product_version
@@ -57,6 +57,7 @@ class SimplePublishEngine:
                     product_id=instance.product.id,
                     task_id=instance.task.id,
                     version=instance.version,
+                    publish_session_id=self.session.id,
                     project_files=published_files,
                 )
                 instance.set_results(version, files)

@@ -3,7 +3,7 @@ import os
 
 from agio.core.plugins.base_service import ServicePlugin, make_action
 from agio.tools import launching
-from agio_pipe.entities.task import ATask
+from agio.core.entities.task import ATask
 
 logger = logging.getLogger(__name__)
 

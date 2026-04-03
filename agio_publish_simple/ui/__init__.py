@@ -1,6 +1,6 @@
 from agio.tools import qt
 from agio_pipe.chips.publish_scene import default_standalone_scene as scene
-from agio_pipe.entities.task import ATask
+from agio.core.entities.task import ATask
 from agio_publish_simple.ui import main_window
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 
-from agio_pipe.entities import product_type as pt
+from agio.core.entities import product_type as pt
 from ._base import PublishProcessingBase
 from agio.tools.modules import import_modules_from_dir, iter_subclasses
 

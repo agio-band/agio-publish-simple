@@ -11,6 +11,6 @@ class PublishEngineSimplePlugin(PublishEngineBasePlugin):
     name = 'simple_publish'
     open_ui_function = 'agio_publish_simple.ui.show_dialog'
 
-    def execute(self, session: PublishSession, **options):
-        engine = SimplePublishEngine(session)
-        engine.run(**options)
+    def start_publish(self, **options):
+        engine = SimplePublishEngine(self.session)
+        return engine.run(**options)

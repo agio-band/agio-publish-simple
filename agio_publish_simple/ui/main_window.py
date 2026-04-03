@@ -10,16 +10,15 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
-import requests
 from agio.core.workspaces import AWorkspaceManager
 from agio.core.workspaces.resources import get_res
 from agio.tools import paths
 from agio.tools.launching import create_workspace_launch_context, LaunchContext
 from agio_pipe.chips.publish_scene.default_standalone_scene import StandalonePublishScene
 from agio_pipe.chips.publish_scene.export_container import ExportContainer
-from agio_pipe.entities.product import AProduct
-from agio_pipe.entities.product_type import AProductType
-from agio_pipe.entities.task import ATask
+from agio.core.entities.product import AProduct
+from agio.core.entities.product_type import AProductType
+from agio.core.entities.task import ATask
 from agio_publish_simple import __version__
 from agio_publish_simple.ui import drop_widget
 
