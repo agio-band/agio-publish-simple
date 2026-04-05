@@ -1,10 +1,9 @@
 import logging
 
 from agio.core.events import emit
-from agio.core.entities.version import AVersion
 from agio_pipe.publish.instance import PublishInstance
 from agio_pipe.publish.publish_session import PublishSession
-from agio_pipe.publish.tools.create_version import create_product_version
+from agio_pipe.schemas.version import PublishedFileFull
 from agio_publish_simple.publish_processing import get_publisher
 
 logger = logging.getLogger(__name__)
@@ -41,41 +40,15 @@ class SimplePublishEngine:
                     **instance.options,
                     **options,
                 }
-                published_files = publisher.publish(**inst_options)
+                published_files: list[PublishedFileFull] = publisher.publish(**inst_options)
                 if not published_files:
                     raise Exception(f'No published files created with instance {instance}')
+                instance.set_value('product_outputs', published_files)
                 processed.append([instance, published_files])
         except Exception:
             # TODO
             raise
-
         logger.info('Start creation versions...')
-        created: list[tuple[AVersion, PublishInstance]] = []
-        for instance, published_files in processed:
-            try:
-                version, files = create_product_version(
-                    product_id=instance.product.id,
-                    task_id=instance.task.id,
-                    version=instance.version,
-                    publish_session_id=self.session.id,
-                    project_files=published_files,
-                )
-                instance.set_results(version, files)
-                emit('pipe.publish.instance_processed',
-                    {'instance': instance, 'session': self.session}
-                )
-                created.append((version, instance))
-            except Exception:
-                if created:
-                    logger.error(
-                        'Failed to create new version. Early created versions in current session will be deleted.')
-                    for vers, inst in created:
-                        logger.warning('DELETE VERSION: {}'.format(vers))
-                        vers.delete()
-                raise
-        for vers, inst in created:
-            emit('pipe.publish.version_created', {
-                'version': vers,
-                'instance': inst,
-            })
-            logger.info('New version: {}'.format(vers))
+        # Required event for create versions in DB!!!
+        event = emit('pipe.publish.product_outputs_created', {'instances': instances})
+        # versions = event.payload['versions']

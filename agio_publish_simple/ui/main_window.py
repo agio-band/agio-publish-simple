@@ -54,7 +54,7 @@ class PublishDialog(QWidget):
             *args
         ):
         super().__init__(*args)
-        self.task = task
+        self.task: ATask = task
         self.setWindowTitle(f'agio Simple Publisher v{__version__}')
         self.main_ly = QVBoxLayout(self)
         self.main_ly.setContentsMargins(-1, 0, -1, -1)
@@ -311,7 +311,7 @@ class PublishDialog(QWidget):
         session = publish_session.PublishSession(session_id=session_id)
         self.report_tb.append_success(f'Publishing session: {session.id}')
         for inst_id, inst in session.instances.items():
-            self.report_tb.append(str(inst.name))
+            self.report_tb.append(f"{inst.task.name}/{inst.product.name}: {inst.name} v{inst.version:03d}")
 
     def _parse_output(self, text: str):
         m = re.search(r'Publish Session ID: "([\w\-]+)"', text)
