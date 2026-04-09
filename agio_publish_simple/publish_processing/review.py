@@ -70,7 +70,6 @@ class PublishProcessingReview(PublishProcessingBase):
         output_dir = self.tempdir/'burn-in'
         output_dir.mkdir(parents=True, exist_ok=True)
         template = self.get_burn_in_template(**options)
-        logger.info('Selected template: %s', template)
         for i, img in enumerate(seq):
             variables = {
                 **self.context,
@@ -80,7 +79,7 @@ class PublishProcessingReview(PublishProcessingBase):
             }
             output_file = output_dir / img.name
             renderer = FrameStamp(img.path, template, variables)
-            logger.info(f"Rendering {img.name}")
+            logger.info(f"Rendering: {img.name}")
             renderer.render(save_path=output_file)
             new_sequence.append(output_file)
         return new_sequence
